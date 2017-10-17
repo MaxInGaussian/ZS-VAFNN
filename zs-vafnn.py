@@ -17,56 +17,63 @@ from examples.utils import dataset
 
 
 @zs.reuse('model')
-def bayesianNN(observed, x, n_x, layer_sizes, n_particles):
+def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
     with zs.BayesianNet(observed=observed) as model:
-        ws = []
-        for i, (n_in, n_out) in enumerate(zip(layer_sizes[:-1],
-                                              layer_sizes[1:])):
-            w_mu = tf.zeros([1, n_out, n_in + 1])
-            ws.append(zs.Normal('w' + str(i), w_mu, std=1.,
-                                n_samples=n_particles, group_ndims=2))
+        f = tf.expand_dims(tf.tile(tf.expand_dims(x, 0), [n_samples, 1, 1]), 3)
+        # shape = {n_samples}*batch_size*n_x*1
+            
+        kern_logscale = tf.get_variable('kern_logscale',
+            shape=[len(layer_sizes)-1], initializer=tf.constant_initializer(0.))
+                            
+        for i in range(len(layer_sizes)-1):
+            
+            if(i < len(layer_sizes)-2 and i%2):
+                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]//2])
+                w = zs.Normal('w'+str(i), w_mu, std=2.*np.pi,
+                            n_samples=n_samples, group_ndims=2)
+                w = tf.tile(w, [1, tf.shape(x)[0], 1, 2])
+                # shape = {n_samples}*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
+            else:
+                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]+1])
+                w = zs.Normal('w'+str(i), w_mu, std=1.,
+                            n_samples=n_samples, group_ndims=2)
+                w = tf.tile(w, [1, tf.shape(x)[0], 1, 1])
+                # shape = {n_samples}*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
+            
+                f = tf.concat(
+                    [f, tf.ones([n_samples, tf.shape(x)[0], 1, 1])], 2)
+                # shape = {n_samples}*batch_size*(layer_sizes[i]+1)*1
+            
+            f = tf.matmul(w, f)
+            # shape = {n_samples}*batch_size*layer_sizes[i+1]*1
+            
+            if(i < len(layer_sizes)-2 and i%2):
+                f = tf.concat([tf.cos(f), tf.sin(f)], 2)
+                f /= tf.exp(kern_logscale[i])*tf.sqrt(layer_sizes[i]/2.)
+            else:
+                f /= tf.sqrt(layer_sizes[i]+1.)
 
-        ly_x = tf.expand_dims(
-            tf.tile(tf.expand_dims(x, 0), [n_particles, 1, 1]), 3)
-        # shape = n_particles*batch_size*n_x*1
-        
-        for i in range(len(ws)):
-            w = tf.tile(ws[i], [1, tf.shape(x)[0], 1, 1])
-            # shape = n_particles*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
+        y_mean = tf.squeeze(f, [2, 3])
+        # shape = {n_samples}*batch_size
             
-            ly_x = tf.concat(
-                [ly_x, tf.ones([n_particles, tf.shape(x)[0], 1, 1])], 2)
-            # shape = n_particles*batch_size*(layer_sizes[i]+1)*1
-            
-            ly_x = tf.matmul(w, ly_x) / tf.sqrt(tf.cast(tf.shape(ly_x)[2],
-                                                        tf.float32))
-            # shape = n_particles*batch_size*layer_sizes[i+1]*1
-            
-            if i < len(ws) - 1:
-                ly_x = tf.nn.relu(ly_x)
-
-        y_mean = tf.squeeze(ly_x, [2, 3])
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
-        y = zs.Normal('y', y_mean, logstd=y_logstd)
+        y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
 
     return model, y_mean
 
 
-def mean_field_variational(layer_sizes, n_particles):
+def mean_field_variational(layer_sizes, n_samples):
     with zs.BayesianNet() as variational:
-        ws = []
-        for i, (n_in, n_out) in enumerate(zip(layer_sizes[:-1],
-                                              layer_sizes[1:])):
-            w_mean = tf.get_variable(
-                'w_mean_' + str(i), shape=[1, n_out, n_in + 1],
+        for i in range(len(layer_sizes)-1):
+            w_mean = tf.get_variable('w_mean_'+str(i),
+                shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
                 initializer=tf.constant_initializer(0.))
-            w_logstd = tf.get_variable(
-                'w_logstd_' + str(i), shape=[1, n_out, n_in + 1],
-                initializer=tf.constant_initializer(0.))
-            ws.append(
-                zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
-                          n_samples=n_particles, group_ndims=2))
+            w_logstd = tf.get_variable('w_logstd_'+str(i),
+            shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
+                initializer=tf.constant_initializer(np.log(2.*np.pi) if i%2 else 0.))
+            zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
+                      n_samples=n_samples, group_ndims=2)
     return variational
 
 
@@ -91,7 +98,7 @@ if __name__ == '__main__':
     n_hiddens = [50]
 
     # Define training/evaluation parameters
-    lb_samples = 10
+    lb_samples = 50
     ll_samples = 5000
     epochs = 500
     batch_size = 10
@@ -102,20 +109,21 @@ if __name__ == '__main__':
     anneal_lr_rate = 0.75
 
     # Build the computation graph
-    n_particles = tf.placeholder(tf.int32, shape=[], name='n_particles')
+    n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
     x = tf.placeholder(tf.float32, shape=[None, n_x])
     y = tf.placeholder(tf.float32, shape=[None])
-    y_obs = tf.tile(tf.expand_dims(y, 0), [n_particles, 1])
-    layer_sizes = [n_x] + n_hiddens + [1]
+    y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1])
+    layer_sizes = [n_x]+[L*(i+1) for i, L in enumerate(n_hiddens*2) if i%2]+[1]
     w_names = ['w' + str(i) for i in range(len(layer_sizes) - 1)]
 
     def log_joint(observed):
-        model, _ = bayesianNN(observed, x, n_x, layer_sizes, n_particles)
+        model, _ = bayesian_neural_networks(
+            observed, x, n_x, layer_sizes, n_samples)
         log_pws = model.local_log_prob(w_names)
         log_py_xw = model.local_log_prob('y')
         return tf.add_n(log_pws) + log_py_xw * N
 
-    variational = mean_field_variational(layer_sizes, n_particles)
+    variational = mean_field_variational(layer_sizes, n_samples)
     qw_outputs = variational.query(w_names, outputs=True, local_log_prob=True)
     latent = dict(zip(w_names, qw_outputs))
     lower_bound = zs.variational.elbo(
@@ -130,7 +138,8 @@ if __name__ == '__main__':
     # prediction: rmse & log likelihood
     observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
     observed.update({'y': y_obs})
-    model, y_mean = bayesianNN(observed, x, n_x, layer_sizes, n_particles)
+    model, y_mean = bayesian_neural_networks(
+        observed, x, n_x, layer_sizes, n_samples)
     y_pred = tf.reduce_mean(y_mean, 0)
     rmse = tf.sqrt(tf.reduce_mean((y_pred - y) ** 2)) * std_y_train
     log_py_xw = model.local_log_prob('y')
@@ -154,7 +163,7 @@ if __name__ == '__main__':
                 y_batch = y_train[t * batch_size:(t + 1) * batch_size]
                 _, lb = sess.run(
                     [infer_op, lower_bound],
-                    feed_dict={n_particles: lb_samples,
+                    feed_dict={n_samples: lb_samples,
                                learning_rate_ph: learning_rate,
                                x: x_batch, y: y_batch})
                 lbs.append(lb)
@@ -166,7 +175,7 @@ if __name__ == '__main__':
                 time_test = -time.time()
                 test_lb, test_rmse, test_ll = sess.run(
                     [lower_bound, rmse, log_likelihood],
-                    feed_dict={n_particles: ll_samples,
+                    feed_dict={n_samples: ll_samples,
                                x: x_test, y: y_test})
                 time_test += time.time()
                 print('>>> TEST ({:.1f}s)'.format(time_test))

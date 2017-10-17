@@ -8,7 +8,6 @@ import os
 import time
 
 import tensorflow as tf
-import tensorflow.contrib.layers as layers
 from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
@@ -18,48 +17,50 @@ from examples.utils import dataset
 
 
 @zs.reuse('model')
-def VAFNN(observed, x, n_x, layer_sizes, n_particles, is_training):
+def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
     with zs.BayesianNet(observed=observed) as model:
-        h = tf.expand_dims(
-                tf.tile(tf.expand_dims(x, 0), [n_particles, 1, 1]), 3)
-        h = tf.concat([h, h], 2)
-        normalizer_params = {'is_training': is_training,
-                             'updates_collections': None}
-        omegas = []
-        for i, (n_in,n_out) in enumerate(zip(layer_sizes[:-1],layer_sizes[1:])):
-            omega_mu = tf.zeros([1, n_out, tf.shape(h)[2]])
-            omegas.append(zs.Normal('omega' + str(i), omega_mu, std=1.,
-                                n_samples=n_particles, group_ndims=2))
-            omega = tf.tile(omegas[i], [1, tf.shape(x)[0], 1, 1])
-            h = tf.matmul(omega, h)
-            if(i < len(layer_sizes)-2):
-                h = tf.concat([tf.cos(h), tf.sin(h)], 2)/tf.sqrt(tf.cast(n_out,
-                                                        tf.float32))
-            h = layers.fully_connected(
-                h, n_out, normalizer_fn=layers.batch_norm,
-                normalizer_params=normalizer_params)
+        f = tf.expand_dims(tf.tile(tf.expand_dims(x, 0), [n_samples, 1, 1]), 3)
+        # shape = {n_samples}*batch_size*n_x*1
         
-        y_mean = tf.squeeze(h, [2, 3])
-        y_logscale = tf.get_variable('y_logscale', shape=[],
+        for i in range(len(layer_sizes)-1):
+            w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]+1])
+            w = zs.Normal('w'+str(i), w_mu, std=1.,
+                          n_samples=n_samples, group_ndims=2)
+            w = tf.tile(w, [1, tf.shape(x)[0], 1, 1])
+            # shape = {n_samples}*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
+            
+            f = tf.concat(
+                [f, tf.ones([n_samples, tf.shape(x)[0], 1, 1])], 2)
+            # shape = {n_samples}*batch_size*(layer_sizes[i]+1)*1
+            
+            f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]+1.)
+            # shape = {n_samples}*batch_size*layer_sizes[i+1]*1
+            
+            if(i < len(layer_sizes)-2):
+                # f = tf.concat([f, f])
+                f = tf.nn.relu(f)
+
+        y_mean = tf.squeeze(f, [2, 3])
+        # shape = {n_samples}*batch_size
+            
+        y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
-        y = zs.Laplace('y', h, scale=tf.exp(y_logscale))
+        y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
 
-    return model, h
+    return model, y_mean
 
 
-def mean_field_variational(layer_sizes, n_particles):
+def mean_field_variational(layer_sizes, n_samples):
     with zs.BayesianNet() as variational:
-        omegas = []
-        for i, (n_in,n_out) in enumerate(zip(layer_sizes[:-1],layer_sizes[1:])):
-            omega_mean = tf.get_variable(
-                'omega_mean_' + str(i), shape=[1, n_out, n_in*2],
+        for i in range(len(layer_sizes)-1):
+            w_mean = tf.get_variable('w_mean_'+str(i),
+                shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
                 initializer=tf.constant_initializer(0.))
-            omega_logstd = tf.get_variable(
-                'omega_logstd_' + str(i), shape=[1, n_out, n_in*2],
+            w_logstd = tf.get_variable('w_logstd_'+str(i),
+            shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
                 initializer=tf.constant_initializer(0.))
-            omegas.append(
-                zs.Normal('omega' + str(i), omega_mean, logstd=omega_logstd,
-                        n_samples=n_particles, group_ndims=2))
+            zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
+                      n_samples=n_samples, group_ndims=2)
     return variational
 
 
@@ -81,12 +82,12 @@ if __name__ == '__main__':
         y_train, y_test)
 
     # Define model parameters
-    n_hiddens = [25]
+    n_hiddens = [50]
 
     # Define training/evaluation parameters
-    lb_samples = 25
+    lb_samples = 10
     ll_samples = 5000
-    epochs = 300
+    epochs = 500
     batch_size = 10
     iters = int(np.floor(x_train.shape[0] / float(batch_size)))
     test_freq = 10
@@ -95,23 +96,23 @@ if __name__ == '__main__':
     anneal_lr_rate = 0.75
 
     # Build the computation graph
-    n_particles = tf.placeholder(tf.int32, shape=[], name='n_particles')
-    is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
+    n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
     x = tf.placeholder(tf.float32, shape=[None, n_x])
     y = tf.placeholder(tf.float32, shape=[None])
-    y_obs = tf.tile(tf.expand_dims(y, 0), [n_particles, 1])
+    y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1])
     layer_sizes = [n_x] + n_hiddens + [1]
-    omega_names = ['omega' + str(i) for i in range(len(layer_sizes) - 1)]
+    w_names = ['w' + str(i) for i in range(len(layer_sizes) - 1)]
 
     def log_joint(observed):
-        model, _ = VAFNN(observed, x, n_x, layer_sizes, n_particles, is_training)
-        log_pws = model.local_log_prob(omega_names)
+        model, _ = bayesian_neural_networks(
+            observed, x, n_x, layer_sizes, n_samples)
+        log_pws = model.local_log_prob(w_names)
         log_py_xw = model.local_log_prob('y')
         return tf.add_n(log_pws) + log_py_xw * N
 
-    variational = mean_field_variational(layer_sizes, n_particles)
-    qw_outputs = variational.query(omega_names, outputs=True, local_log_prob=True)
-    latent = dict(zip(omega_names, qw_outputs))
+    variational = mean_field_variational(layer_sizes, n_samples)
+    qw_outputs = variational.query(w_names, outputs=True, local_log_prob=True)
+    latent = dict(zip(w_names, qw_outputs))
     lower_bound = zs.variational.elbo(
         log_joint, observed={'y': y_obs}, latent=latent, axis=0)
     cost = tf.reduce_mean(lower_bound.sgvb())
@@ -122,13 +123,12 @@ if __name__ == '__main__':
     infer_op = optimizer.minimize(cost)
 
     # prediction: rmse & log likelihood
-    observed = dict((w_name, latent[w_name][0]) for w_name in omega_names)
+    observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
     observed.update({'y': y_obs})
-    model, y_mean = VAFNN(observed, x, n_x, layer_sizes, n_particles, is_training)
+    model, y_mean = bayesian_neural_networks(
+        observed, x, n_x, layer_sizes, n_samples)
     y_pred = tf.reduce_mean(y_mean, 0)
-    mae = tf.reduce_mean(tf.abs(y_pred - y) * std_y_train)
-    nmse = tf.reduce_mean((y_pred - y) ** 2)
-    rmse = tf.sqrt(nmse) * std_y_train
+    rmse = tf.sqrt(tf.reduce_mean((y_pred - y) ** 2)) * std_y_train
     log_py_xw = model.local_log_prob('y')
     log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0)) - \
         tf.log(std_y_train)
@@ -150,8 +150,7 @@ if __name__ == '__main__':
                 y_batch = y_train[t * batch_size:(t + 1) * batch_size]
                 _, lb = sess.run(
                     [infer_op, lower_bound],
-                    feed_dict={n_particles: lb_samples,
-                               is_training: True,
+                    feed_dict={n_samples: lb_samples,
                                learning_rate_ph: learning_rate,
                                x: x_batch, y: y_batch})
                 lbs.append(lb)
@@ -161,15 +160,12 @@ if __name__ == '__main__':
 
             if epoch % test_freq == 0:
                 time_test = -time.time()
-                test_lb, test_mae, test_nmse, test_rmse, test_ll = sess.run(
-                    [lower_bound, mae, nmse, rmse, log_likelihood],
-                    feed_dict={n_particles: ll_samples,
-                               is_training: False,
+                test_lb, test_rmse, test_ll = sess.run(
+                    [lower_bound, rmse, log_likelihood],
+                    feed_dict={n_samples: ll_samples,
                                x: x_test, y: y_test})
                 time_test += time.time()
                 print('>>> TEST ({:.1f}s)'.format(time_test))
                 print('>> Test lower bound = {}'.format(test_lb))
-                print('>> Test mae = {}'.format(test_mae))
-                print('>> Test nmse = {}'.format(test_nmse))
                 print('>> Test rmse = {}'.format(test_rmse))
                 print('>> Test log_likelihood = {}'.format(test_ll))
