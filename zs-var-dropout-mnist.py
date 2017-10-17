@@ -76,51 +76,51 @@ if __name__ == '__main__':
     learning_rate = 0.01
     anneal_lr_freq = 100
     anneal_lr_rate = 0.75
+    with tf.device('/gpu:1'):
+        # placeholders
+        n_particles = tf.placeholder(tf.int32, shape=[], name='n_particles')
+        is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
+        x = tf.placeholder(tf.float32, shape=(None, n_x))
+        y = tf.placeholder(tf.int32, shape=(None, n_class))
+        n = tf.shape(x)[0]
     
-    # placeholders
-    n_particles = tf.placeholder(tf.int32, shape=[], name='n_particles')
-    is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
-    x = tf.placeholder(tf.float32, shape=(None, n_x))
-    y = tf.placeholder(tf.int32, shape=(None, n_class))
-    n = tf.shape(x)[0]
-
-    net_size = [n_x, 100, 100, 100, n_class]
-    e_names = ['layer' + str(i) + '/eps' for i in range(len(net_size) - 1)]
-
-    x_obs = tf.tile(tf.expand_dims(x, 0), [n_particles, 1, 1])
-    y_obs = tf.tile(tf.expand_dims(y, 0), [n_particles, 1, 1])
-
-    def log_joint(observed):
-        model, _ = var_dropout(observed, x_obs, n, net_size,
-                            n_particles, is_training)
-        log_pe = model.local_log_prob(e_names)
-        log_py_xe = model.local_log_prob('y')
-        return tf.add_n(log_pe) / x_train.shape[0] + log_py_xe
-
-    variational = q({}, n, net_size, n_particles)
-    qe_queries = variational.query(e_names, outputs=True, local_log_prob=True)
-    qe_samples, log_qes = zip(*qe_queries)
-    log_qes = [log_qe / x_train.shape[0] for log_qe in log_qes]
-    e_dict = dict(zip(e_names, zip(qe_samples, log_qes)))
-    lower_bound = tf.reduce_mean(
-        zs.sgvb(log_joint, {'y': y_obs}, e_dict, axis=0))
-
-    _, h_pred = var_dropout(dict(zip(e_names, qe_samples)),
-                            x_obs, n, net_size,
-                            n_particles, is_training)
-    h_pred = tf.reduce_mean(h_pred, 0)
-    y_pred = tf.argmax(h_pred, 1)
-    sparse_y = tf.argmax(y, 1)
-    acc = tf.reduce_mean(tf.cast(tf.equal(y_pred, sparse_y), tf.float32))
-
-    learning_rate_ph = tf.placeholder(tf.float32, shape=())
-    optimizer = tf.train.AdamOptimizer(learning_rate_ph, epsilon=1e-4)
-    infer = optimizer.minimize(-lower_bound)
-
-    params = tf.trainable_variables()
-    for i in params:
-        print('variable name = {}, shape = {}'
-            .format(i.name, i.get_shape()))
+        net_size = [n_x, 100, 100, 100, n_class]
+        e_names = ['layer' + str(i) + '/eps' for i in range(len(net_size) - 1)]
+    
+        x_obs = tf.tile(tf.expand_dims(x, 0), [n_particles, 1, 1])
+        y_obs = tf.tile(tf.expand_dims(y, 0), [n_particles, 1, 1])
+    
+        def log_joint(observed):
+            model, _ = var_dropout(observed, x_obs, n, net_size,
+                                n_particles, is_training)
+            log_pe = model.local_log_prob(e_names)
+            log_py_xe = model.local_log_prob('y')
+            return tf.add_n(log_pe) / x_train.shape[0] + log_py_xe
+    
+        variational = q({}, n, net_size, n_particles)
+        qe_queries = variational.query(e_names, outputs=True, local_log_prob=True)
+        qe_samples, log_qes = zip(*qe_queries)
+        log_qes = [log_qe / x_train.shape[0] for log_qe in log_qes]
+        e_dict = dict(zip(e_names, zip(qe_samples, log_qes)))
+        lower_bound = tf.reduce_mean(
+            zs.sgvb(log_joint, {'y': y_obs}, e_dict, axis=0))
+    
+        _, h_pred = var_dropout(dict(zip(e_names, qe_samples)),
+                                x_obs, n, net_size,
+                                n_particles, is_training)
+        h_pred = tf.reduce_mean(h_pred, 0)
+        y_pred = tf.argmax(h_pred, 1)
+        sparse_y = tf.argmax(y, 1)
+        acc = tf.reduce_mean(tf.cast(tf.equal(y_pred, sparse_y), tf.float32))
+    
+        learning_rate_ph = tf.placeholder(tf.float32, shape=())
+        optimizer = tf.train.AdamOptimizer(learning_rate_ph, epsilon=1e-4)
+        infer = optimizer.minimize(-lower_bound)
+    
+        params = tf.trainable_variables()
+        for i in params:
+            print('variable name = {}, shape = {}'
+                .format(i.name, i.get_shape()))
 
     # Run the inference
     with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
