@@ -44,8 +44,8 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
             
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
-        y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
-        # y = zs.Normal('y', y_mean, logstd=y_logstd)
+        # y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
+        y = zs.Normal('y', y_mean, logstd=y_logstd)
 
     return model, y_mean
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     batch_size = 10
     iters = int(np.floor(x_train.shape[0] / float(batch_size)))
     test_freq = 10
-    learning_rate = 0.01
+    learning_rate = 1
     anneal_lr_freq = 100
     anneal_lr_rate = 0.75
 
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     lower_bound = tf.reduce_mean(lower_bound)
 
     learning_rate_ph = tf.placeholder(tf.float32, shape=[])
-    optimizer = tf.train.AdamOptimizer(learning_rate_ph)
+    optimizer = tf.train.AdadeltaOptimizer(learning_rate_ph)
     infer_op = optimizer.minimize(cost)
 
     # prediction: rmse & log likelihood
@@ -142,8 +142,8 @@ if __name__ == '__main__':
         sess.run(tf.global_variables_initializer())
         for epoch in range(1, epochs + 1):
             time_epoch = -time.time()
-            if epoch % anneal_lr_freq == 0:
-                learning_rate *= anneal_lr_rate
+            # if epoch % anneal_lr_freq == 0:
+            #     learning_rate *= anneal_lr_rate
             lbs = []
             for t in range(iters):
                 x_batch = x_train[t * batch_size:(t + 1) * batch_size]

@@ -37,6 +37,13 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples, is_traini
                     normalizer_params=normalizer_params)
                 f = tf.transpose(f, perm=[0, 1, 3, 2])
                 
+                # w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
+                # w = zs.Normal('w'+str(i), w_mu, std=1.,
+                #             n_samples=n_samples, group_ndims=2)
+                # w = tf.tile(w, [1, tf.shape(x)[0], 1, 1])
+                # 
+                # f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
+                
                 f = tf.concat([tf.cos(f), tf.sin(f)], 2)/tf.exp(kern_logscale[i])/tf.sqrt(layer_sizes[i]*1.) 
                 w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
                 w = zs.Normal('w'+str(i), w_mu, std=2.*np.pi,
@@ -44,18 +51,22 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples, is_traini
                 w = tf.tile(w, [1, tf.shape(x)[0], 1, 2])
 
                 f = tf.matmul(w, f)
+                # shape = {n_samples}*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
                 
             else:
                 w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]+1])
                 w = zs.Normal('w'+str(i), w_mu, std=1.,
                             n_samples=n_samples, group_ndims=2)
                 w = tf.tile(w, [1, tf.shape(x)[0], 1, 1])
+                # shape = {n_samples}*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
                 
                 f = tf.concat([f, tf.ones([n_samples, tf.shape(x)[0], 1, 1])], 2)
+                # shape = {n_samples}*batch_size*(layer_sizes[i]+1)*1
                 
                 f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]+1.)
 
         y_mean = tf.squeeze(f, [2, 3])
+        # shape = {n_samples}*batch_size            
         
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
@@ -107,7 +118,7 @@ if __name__ == '__main__':
         y_train, y_test)
 
     # Define model parameters
-    n_hiddens = [50]
+    n_hiddens = [100, 50]
 
     # Define training/evaluation parameters
     lb_samples = 10
@@ -116,7 +127,7 @@ if __name__ == '__main__':
     batch_size = 10
     iters = int(np.floor(x_train.shape[0] / float(batch_size)))
     test_freq = 10
-    learning_rate = 1e-2
+    learning_rate = 1
     anneal_lr_freq = 100
     anneal_lr_rate = 0.75
 
@@ -145,7 +156,7 @@ if __name__ == '__main__':
     lower_bound = tf.reduce_mean(lower_bound)
 
     learning_rate_ph = tf.placeholder(tf.float32, shape=[])
-    optimizer = tf.train.AdamOptimizer(learning_rate_ph)
+    optimizer = tf.train.AdadeltaOptimizer(learning_rate_ph)
     infer_op = optimizer.minimize(cost)
 
     # prediction: rmse & log likelihood
