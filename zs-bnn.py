@@ -29,8 +29,7 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
             w = tf.tile(w, [1, tf.shape(x)[0], 1, 1])
             # shape = {n_samples}*batch_size*layer_sizes[i+1]*(layer_sizes[i]+1)
             
-            f = tf.concat(
-                [f, tf.ones([n_samples, tf.shape(x)[0], 1, 1])], 2)
+            f = tf.concat([f, tf.ones([n_samples, tf.shape(x)[0], 1, 1])], 2)
             # shape = {n_samples}*batch_size*(layer_sizes[i]+1)*1
             
             f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]+1.)
@@ -45,7 +44,8 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
             
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
-        y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
+        # y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
+        y = zs.Normal('y', y_mean, logstd=y_logstd)
 
     return model, y_mean
 
