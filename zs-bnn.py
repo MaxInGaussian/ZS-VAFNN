@@ -44,8 +44,8 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
             
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
-        # y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
-        y = zs.Normal('y', y_mean, logstd=y_logstd)
+        y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
+        # y = zs.Normal('y', y_mean, logstd=y_logstd)
 
     return model, y_mean
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         y_train, y_test)
 
     # Define model parameters
-    n_hiddens = [50]
+    n_hiddens = [100, 50]
 
     # Define training/evaluation parameters
     lb_samples = 10

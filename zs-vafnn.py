@@ -32,13 +32,20 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples, is_traini
                 
                 f = tf.transpose(f, perm=[0, 1, 3, 2])
                 f = layers.fully_connected(
-                    f, layer_sizes[i+1], activation_fn=None,
+                    f, layer_sizes[i], activation_fn=None,
                     normalizer_fn=layers.batch_norm,
                     normalizer_params=normalizer_params)
                 f = tf.transpose(f, perm=[0, 1, 3, 2])
                 
+                # w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
+                # w = zs.Normal('w'+str(i), w_mu, std=1.,
+                #             n_samples=n_samples, group_ndims=2)
+                # w = tf.tile(w, [1, tf.shape(x)[0], 1, 1])
+                # 
+                # f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
+                
                 f = tf.concat([tf.cos(f), tf.sin(f)], 2)/tf.exp(kern_logscale[i])/tf.sqrt(layer_sizes[i]*1.) 
-                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i+1]])
+                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
                 w = zs.Normal('w'+str(i), w_mu, std=2.*np.pi,
                             n_samples=n_samples, group_ndims=2)
                 w = tf.tile(w, [1, tf.shape(x)[0], 1, 2])
@@ -63,8 +70,8 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples, is_traini
         
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
-        # y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
-        y = zs.Normal('y', y_mean, logstd=y_logstd)
+        y = zs.Laplace('y', y_mean, scale=tf.exp(y_logstd))
+        # y = zs.Normal('y', y_mean, logstd=y_logstd)
 
     return model, y_mean
 
@@ -74,11 +81,21 @@ def mean_field_variational(layer_sizes, n_samples):
         for i in range(len(layer_sizes)-1):            
             if(i < len(layer_sizes)-2):
                 w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i+1]],
-                    initializer=tf.constant_initializer(0.))
-                w_logstd = tf.get_variable('w_logstd_'+str(i),
-                shape=[1, layer_sizes[i+1], layer_sizes[i+1]],
+                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
                     initializer=tf.constant_initializer(np.log(2.*np.pi)))
+                w_logstd = tf.get_variable('w_logstd_'+str(i),
+                shape=[1, layer_sizes[i+1], layer_sizes[i]],
+                    initializer=tf.constant_initializer(np.log(2.*np.pi)))
+                zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
+                        n_samples=n_samples, group_ndims=2)
+                # ww_mean = tf.get_variable('ww_mean_'+str(i),
+                #     shape=[1, layer_sizes[i+1], layer_sizes[i+1]],
+                #     initializer=tf.constant_initializer(0.))
+                # ww_logstd = tf.get_variable('ww_logstd_'+str(i),
+                # shape=[1, layer_sizes[i+1], layer_sizes[i+1]],
+                #     initializer=tf.constant_initializer(np.log(2.*np.pi)))
+                # zs.Normal('ww' + str(i), w_mean, logstd=w_logstd,
+                #         n_samples=n_samples, group_ndims=2)
             else:
                 w_mean = tf.get_variable('w_mean_'+str(i),
                     shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
@@ -86,8 +103,8 @@ def mean_field_variational(layer_sizes, n_samples):
                 w_logstd = tf.get_variable('w_logstd_'+str(i),
                 shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
                     initializer=tf.constant_initializer(0.))
-            zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
-                    n_samples=n_samples, group_ndims=2)
+                zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
+                        n_samples=n_samples, group_ndims=2)
     return variational
 
 
@@ -109,7 +126,7 @@ if __name__ == '__main__':
         y_train, y_test)
 
     # Define model parameters
-    n_hiddens = [50]
+    n_hiddens = [100, 50]
 
     # Define training/evaluation parameters
     lb_samples = 10
