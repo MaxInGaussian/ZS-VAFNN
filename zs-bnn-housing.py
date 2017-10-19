@@ -36,7 +36,6 @@ def bayesian_neural_networks(observed, x, n_x, layer_sizes, n_samples):
             # shape = {n_samples}*batch_size*layer_sizes[i+1]*1
             
             if(i < len(layer_sizes)-2):
-                # f = tf.concat([f, f])
                 f = tf.nn.relu(f)
 
         y_mean = tf.squeeze(f, [2, 3])
@@ -82,25 +81,25 @@ if __name__ == '__main__':
         y_train, y_test)
 
     # Define model parameters
-    n_hiddens = [100, 50]
+    n_hiddens = [100]
 
     # Define training/evaluation parameters
+    plot_performance = False
     lb_samples = 10
-    ll_samples = 5000
-    epochs = 500
-    batch_size = 10
+    ll_samples = 3000
+    epochs = 200
+    batch_size = 50
     iters = int(np.floor(x_train.shape[0] / float(batch_size)))
-    test_freq = 10
-    learning_rate = 1
-    anneal_lr_freq = 100
-    anneal_lr_rate = 0.75
+    check_freq = 25
+    learning_rate = 1e-1
 
     # Build the computation graph
     n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
+    is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
     x = tf.placeholder(tf.float32, shape=[None, n_x])
     y = tf.placeholder(tf.float32, shape=[None])
     y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1])
-    layer_sizes = [n_x] + n_hiddens + [1]
+    layer_sizes = [n_x]+n_hiddens+[1]
     w_names = ['w' + str(i) for i in range(len(layer_sizes) - 1)]
 
     def log_joint(observed):
@@ -113,14 +112,19 @@ if __name__ == '__main__':
     variational = mean_field_variational(layer_sizes, n_samples)
     qw_outputs = variational.query(w_names, outputs=True, local_log_prob=True)
     latent = dict(zip(w_names, qw_outputs))
+    
     lower_bound = zs.variational.elbo(
         log_joint, observed={'y': y_obs}, latent=latent, axis=0)
     cost = tf.reduce_mean(lower_bound.sgvb())
     lower_bound = tf.reduce_mean(lower_bound)
 
     learning_rate_ph = tf.placeholder(tf.float32, shape=[])
-    optimizer = tf.train.AdadeltaOptimizer(learning_rate_ph)
-    infer_op = optimizer.minimize(cost)
+    global_step = tf.Variable(0, trainable=False)
+    learning_rate_ts = tf.train.exponential_decay(
+        learning_rate_ph, global_step, 10000, 0.96, staircase=True)
+    optimizer = tf.train.AdamOptimizer(learning_rate_ts)
+    infer_op = optimizer.minimize(cost, global_step=global_step)
+    
 
     # prediction: rmse & log likelihood
     observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
@@ -138,12 +142,12 @@ if __name__ == '__main__':
         print(i.name, i.get_shape())
 
     # Run the inference
+    train_lbs, train_rmses, train_lls = [], [], []
+    test_lbs, test_rmses, test_lls = [], [], []
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for epoch in range(1, epochs + 1):
             time_epoch = -time.time()
-            # if epoch % anneal_lr_freq == 0:
-            #     learning_rate *= anneal_lr_rate
             lbs = []
             for t in range(iters):
                 x_batch = x_train[t * batch_size:(t + 1) * batch_size]
@@ -158,14 +162,54 @@ if __name__ == '__main__':
             print('Epoch {} ({:.1f}s): Lower bound = {}'.format(
                 epoch, time_epoch, np.mean(lbs)))
 
-            if epoch % test_freq == 0:
+            if epoch % check_freq == 0:
+                train_lb, train_rmse, train_ll = sess.run(
+                    [lower_bound, rmse, log_likelihood],
+                    feed_dict={n_samples: ll_samples,
+                               x: x_train, y: y_train})
+                if(len(train_lbs)==0):
+                    train_lbs.append(train_lb)
+                    train_rmses.append(train_rmse)
+                    train_lls.append(train_ll)
+                else:
+                    train_lbs.append(train_lb if train_lb<np.max(train_lbs) else np.max(train_lbs))
+                    train_rmses.append(train_rmse if train_rmse<np.min(train_rmses) else np.min(train_rmses))
+                    train_lls.append(train_ll if train_ll<np.max(train_lls) else np.max(train_lls))
                 time_test = -time.time()
                 test_lb, test_rmse, test_ll = sess.run(
                     [lower_bound, rmse, log_likelihood],
                     feed_dict={n_samples: ll_samples,
+                               is_training: False,
                                x: x_test, y: y_test})
                 time_test += time.time()
+                if(len(test_lbs)==0):
+                    test_lbs.append(test_lb)
+                    test_rmses.append(test_rmse)
+                    test_lls.append(test_ll)
+                else:
+                    test_lbs.append(test_lb if test_lb<np.max(test_lbs) else np.max(test_lbs))
+                    test_rmses.append(test_rmse if test_rmse<np.min(test_rmses) else np.min(test_rmses))
+                    test_lls.append(test_ll if test_ll<np.max(test_lls) else np.max(test_lls))
                 print('>>> TEST ({:.1f}s)'.format(time_test))
                 print('>> Test lower bound = {}'.format(test_lb))
                 print('>> Test rmse = {}'.format(test_rmse))
                 print('>> Test log_likelihood = {}'.format(test_ll))
+    if(plot_performance):
+        import matplotlib.pyplot as plt
+        plt.subplot(2, 1, 1)
+        test_epochs = (np.arange(len(train_rmses))+1)*check_freq
+        plt.semilogx(test_epochs, train_rmses, '--', label='Train')
+        plt.semilogx(test_epochs, test_rmses, label='Test')
+        plt.legend(loc='upper right')
+        plt.ylim([3, 4])
+        plt.xlabel('Epoch')
+        plt.ylabel('RMSE')
+        
+        plt.subplot(2, 1, 2)
+        test_epochs = (np.arange(len(train_rmses))+1)*check_freq
+        plt.semilogx(test_epochs, train_lls, '--', label='Train')
+        plt.semilogx(test_epochs, test_lls, label='Test')
+        plt.ylim([-3, -2])
+        plt.xlabel('Epoch')
+        plt.ylabel('Log Likelihood')
+        plt.show()
