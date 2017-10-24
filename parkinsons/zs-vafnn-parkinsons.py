@@ -37,7 +37,7 @@ n_folds = 10
 
 def load_data(n_folds=n_folds):
     import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
+    data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=0)
     data = data.as_matrix().astype(np.float32)
     X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
