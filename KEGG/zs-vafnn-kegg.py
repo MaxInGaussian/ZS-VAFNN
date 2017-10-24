@@ -33,23 +33,24 @@ import zhusuan as zs
 ############################ Data Setting ############################
 DATA_PATH = 'Relation Network (Directed).data'
 BEST_MODEL_PATH = 'best_model.pkl'
-train_prop, nfolds = 0.9, 5
+n_folds = 10
 
-def load_data(train_prop=train_prop, nfolds=nfolds):
+def load_data(n_folds=n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
     data = data.as_matrix().astype(np.float32)
     X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
-    ndata = y.shape[0]
-    npartition = ndata//nfolds
-    ntrain = int(train_prop*npartition)
+    n_data = y.shape[0]
+    n_partition = n_data//n_folds
+    n_train = n_partition*(n_folds-1)
     train_test_set = []
-    for fold in range(nfolds):
-        train_inds = np.random.choice(range(npartition), ntrain, replace=False)
-        test_inds = np.setdiff1d(range(npartition), train_inds)
-        train_inds += fold*npartition
-        test_inds += fold*npartition
+    for fold in range(n_folds):
+        if(fold == n_folds-1):
+            test_inds = np.arange(n_data)[fold*n_partition:]
+        else:
+            test_inds = np.arange(n_data)[fold*n_partition:(fold+1)*n_partition]
+        train_inds = np.setdiff1d(range(n_data), test_inds)
         X_train, y_train = X[train_inds].copy(), y[train_inds].ravel()
         X_test, y_test = X[test_inds].copy(), y[test_inds].ravel()
         train_test_set.append([X_train, y_train, X_test, y_test])
