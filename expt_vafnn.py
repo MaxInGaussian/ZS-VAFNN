@@ -125,7 +125,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
     early_stop = 20 if 'early_stop' not in args.keys() else args['early_stop']
     learn_rate = 1e-3 if 'learn_rate' not in args.keys() else args['learn_rate']
 
-    max_lb = 0
+    max_lb = -np.Infinity
     train_lbs, train_rmses, train_lls = [], [], []
     test_lbs, test_rmses, test_lls = [], [], []
     for fold, (X_train, y_train, X_test, y_test) in enumerate(train_test_set):
@@ -268,7 +268,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
             model_name = "VAFNN{"+",".join(list(map(str, layer_sizes)))+"}"
             plt.subplot(2, 1, 1)        
             plt.title(model_name+" on "+dataset_name)
-            test_max_epochs = (np.arange(len(fold_train_rmses[0]))+1)*check_freq
+            test_max_epochs = (np.arange(len(fold_train_rmses))+1)*check_freq
             plt.semilogx(test_max_epochs,
                 np.mean(fold_train_rmses, axis=0), '--', label='Train')
             plt.semilogx(test_max_epochs,
@@ -278,7 +278,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
             plt.ylabel('RMSE')
             
             plt.subplot(2, 1, 2)
-            test_max_epochs = (np.arange(len(fold_train_lls[0]))+1)*check_freq
+            test_max_epochs = (np.arange(len(fold_train_lls))+1)*check_freq
             plt.semilogx(test_max_epochs,
                 np.mean(fold_train_lls, axis=0), '--', label='Train')
             plt.semilogx(test_max_epochs,
