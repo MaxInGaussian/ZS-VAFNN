@@ -304,7 +304,7 @@ if __name__ == '__main__':
         import matplotlib.pyplot as plt
         model_name = "VAFNN{"+",".join(list(map(str, layer_sizes)))+"}"
         plt.subplot(2, 1, 1)        
-        plt.title(model_name+" on Boston Housing")
+        plt.title(model_name+" on KEGG")
         test_epochs = (np.arange(len(train_rmses[0]))+1)*check_freq
         plt.semilogx(test_epochs, np.mean(train_rmses, axis=0), '--', label='Train')
         plt.semilogx(test_epochs, np.mean(test_rmses, axis=0), label='Test')
@@ -319,4 +319,4 @@ if __name__ == '__main__':
         plt.xlabel('Epoch')
         plt.ylabel('Log Likelihood')
         plt.show()
-        plt.savefig(model_name+'_Boston_Housing.png')
+        plt.savefig(model_name+'_KEGG.png')
