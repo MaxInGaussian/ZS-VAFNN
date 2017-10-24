@@ -160,6 +160,7 @@ if __name__ == '__main__':
     epochs = 500
     iters = 10
     check_freq = 5
+    early_stop = 30
     learning_rate = 1e-3
 
     train_test_set = load_data()
@@ -223,6 +224,7 @@ if __name__ == '__main__':
             print(i.name, i.get_shape())
     
         # Run the inference
+        lb_window, count_over_train = [], 0
         fold_train_lbs, fold_train_rmses, fold_train_lls = [], [], []
         fold_test_lbs, fold_test_rmses, fold_test_lls = [], [], []
         with tf.Session() as sess:
@@ -243,7 +245,13 @@ if __name__ == '__main__':
                 time_epoch += time.time()
                 print('Epoch {} ({:.1f}s): Lower bound = {}'.format(
                     epoch, time_epoch, np.mean(lbs)))
-    
+                if(len(lb_window)>=early_stop):
+                    del lb_window[0]
+                    if(np.mean(lbs)<np.mean(lb_window)):
+                        count_over_train += 1
+                    else:
+                        count_over_train = 0
+                lb_window.append(np.mean(lbs))
                 if epoch % check_freq == 0:
                     time_train = -time.time()
                     train_lb, train_rmse, train_ll = sess.run(
@@ -283,6 +291,8 @@ if __name__ == '__main__':
                     print('>> Test lower bound = {}'.format(test_lb))
                     print('>> Test rmse = {}'.format(test_rmse))
                     print('>> Test log_likelihood = {}'.format(test_ll))
+                if(count_over_train > early_stop):
+                    break
         train_lbs.append(np.array(fold_train_lbs))
         train_rmses.append(np.array(fold_train_rmses))
         train_lls.append(np.array(fold_train_lls))
