@@ -13,20 +13,22 @@
 # limitations under the License.
 
 
-import os, sys
-import numpy as np
-import numpy.random as npr
-import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
 
-try:
-    from vafnet import VAFnet, Visualizer
-except:
-    print("vafnet is not installed yet! Trying to call directly from source...")
-    from sys import path
-    path.append("../../")
-    from vafnet import VAFnet, Visualizer
-    print("done.")
+import sys
+sys.path.append("../../")
+
+import os
+import time
+
+import tensorflow as tf
+import tensorflow.contrib.layers as layers
+from six.moves import range, zip
+import numpy as np
+import zhusuan as zs
+
 
 ############################ Data Setting ############################
 DATA_PATH = 'parkinsons_updrs.data'
