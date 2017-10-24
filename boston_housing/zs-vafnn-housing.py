@@ -34,7 +34,7 @@ from expt_vafnn import run_vafnn_experiment
 
 DATA_PATH = 'housing.data'
 
-def load_data(n_folds=n_folds):
+def load_data(n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(
         path=DATA_PATH, header=None, index_col=None, sep="[ ^]+")
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         'lb_samples': 20,
         'll_samples': 100,
         'n_hiddens': [100],
-        'drop_rate': 0.3,
+        'drop_rate': 0.5,
         'learn_rate': 1e-3,
     }
     run_vafnn_experiment('Boston Housing', load_data(10), **training_settings)

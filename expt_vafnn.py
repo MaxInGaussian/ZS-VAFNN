@@ -125,7 +125,6 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
     early_stop = 20 if 'early_stop' not in args.keys() else args['early_stop']
     learn_rate = 1e-3 if 'learn_rate' not in args.keys() else args['learn_rate']
 
-    max_lb = -np.Infinity
     train_lbs, train_rmses, train_lls = [], [], []
     test_lbs, test_rmses, test_lls = [], [], []
     for fold, (X_train, y_train, X_test, y_test) in enumerate(train_test_set):
@@ -193,6 +192,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
         fold_test_lbs, fold_test_rmses, fold_test_lls = [], [], []
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+            max_lb, min_err = -np.Infinity, np.Infinity
             for epoch in range(1, max_epochs + 1):
                 time_epoch = -time.time()
                 lbs = []
@@ -207,15 +207,17 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                                 X: X_batch, y: y_batch})
                     lbs.append(lb)
                 time_epoch += time.time()
-                print('Epoch {} ({:.1f}s): Lower bound = {}'.format(
-                    epoch, time_epoch, np.mean(lbs)))
+                print('Epoch {} ({:.1f}s, {}): Lower bound = {}'.format(
+                    epoch, time_epoch, count_over_train, np.mean(lbs)))
                 if(len(lb_window)>=early_stop):
                     del lb_window[0]
-                    if(np.mean(lbs)<np.mean(lb_window)+np.std(lb_window)):
+                    if(max_lb>np.max(lb_window)+np.std(lb_window)):
                         count_over_train += 1
                     else:
                         count_over_train = 0
                 lb_window.append(np.mean(lbs))
+                if(max_lb < np.mean(lbs)):
+                    max_lb = np.mean(lbs)
                 if epoch % check_freq == 0:
                     time_train = -time.time()
                     train_lb, train_rmse, train_ll = sess.run(
@@ -224,8 +226,8 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                                 is_training: False,
                                 X: X_train, y: y_train})
                     time_train += time.time()
-                    if(max_lb < train_lb):
-                        max_lb = train_lb
+                    if(min_err>train_rmse/np.exp(train_ll)):
+                        min_err = train_rmse/np.exp(train_ll)
                         saver = tf.train.Saver()
                         if not os.path.exists('./trained/'):
                             os.makedirs('./trained/')
@@ -238,7 +240,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         fold_train_lbs.append(train_lb)
                         fold_train_rmses.append(train_rmse)
                         fold_train_lls.append(train_ll)
-                    print('>>> TRAIN ({:.1f}s)'.format(time_train))
+                    print('>>> TRAIN ({})'.format(min_err))
                     print('>> Train lower bound = {}'.format(train_lb))
                     print('>> Train rmse = {}'.format(train_rmse))
                     print('>> Train log_likelihood = {}'.format(train_ll))
@@ -257,7 +259,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         fold_test_lbs.append(test_lb)
                         fold_test_rmses.append(test_rmse)
                         fold_test_lls.append(test_ll)
-                    print('>>> TEST ({:.1f}s, {})'.format(time_test, count_over_train))
+                    print('>>> TEST ({:.1f}s)'.format(time_test))
                     print('>> Test lower bound = {}'.format(test_lb))
                     print('>> Test rmse = {}'.format(test_rmse))
                     print('>> Test log_likelihood = {}'.format(test_ll))
@@ -269,20 +271,16 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
             plt.subplot(2, 1, 1)        
             plt.title(model_name+" on "+dataset_name)
             test_max_epochs = (np.arange(len(fold_train_rmses))+1)*check_freq
-            plt.semilogx(test_max_epochs,
-                np.mean(fold_train_rmses, axis=0), '--', label='Train')
-            plt.semilogx(test_max_epochs,
-                np.mean(fold_test_rmses, axis=0), label='Test')
+            plt.semilogx(test_max_epochs, fold_train_rmses, '--', label='Train')
+            plt.semilogx(test_max_epochs, fold_test_rmses, label='Test')
             plt.legend(loc='upper right')
             plt.xlabel('Epoch')
             plt.ylabel('RMSE')
             
             plt.subplot(2, 1, 2)
             test_max_epochs = (np.arange(len(fold_train_lls))+1)*check_freq
-            plt.semilogx(test_max_epochs,
-                np.mean(fold_train_lls, axis=0), '--', label='Train')
-            plt.semilogx(test_max_epochs,
-                np.mean(fold_test_lls, axis=0), label='Test')
+            plt.semilogx(test_max_epochs, fold_train_lls, '--', label='Train')
+            plt.semilogx(test_max_epochs, fold_test_lls, label='Test')
             plt.xlabel('Epoch')
             plt.ylabel('Log Likelihood')
             plt.show()
