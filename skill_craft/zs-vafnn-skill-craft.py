@@ -29,6 +29,9 @@ from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
 
+from expt_vafnn import run_vafnn_experiment
+
+
 DATA_PATH = 'SkillCraft1_Dataset.csv'
 
 def load_data(n_folds):

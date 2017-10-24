@@ -31,6 +31,7 @@ import zhusuan as zs
 
 from expt_vafnn import run_vafnn_experiment
 
+
 DATA_PATH = 'CASP.csv'
 
 def load_data(n_folds):
