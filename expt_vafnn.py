@@ -195,8 +195,12 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                 time_epoch = -time.time()
                 lbs = []
                 for t in range(iters):
-                    X_batch = X_train[t * batch_size:(t + 1) * batch_size]
-                    y_batch = y_train[t * batch_size:(t + 1) * batch_size]
+                    if(t == iters-1):                        
+                        X_batch = X_train[t*batch_size:]
+                        y_batch = y_train[t*batch_size:]
+                    else:
+                        X_batch = X_train[t*batch_size:(t+1)*batch_size]
+                        y_batch = y_train[t*batch_size:(t+1)*batch_size]
                     _, lb = sess.run(
                         [infer_op, lower_bound],
                         feed_dict={n_samples: lb_samples,
@@ -215,12 +219,23 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                 if(max_lb < np.mean(lbs)):
                     max_lb = np.mean(lbs)
                 if epoch % check_freq == 0:
+                    lbs, rmses, lls = [], [], []
                     time_train = -time.time()
-                    train_lb, train_rmse, train_ll = sess.run(
-                        [lower_bound, rmse, log_likelihood],
-                        feed_dict={n_samples: lb_samples,
-                                is_training: False,
-                                X: X_train, y: y_train})
+                    for t in range(iters):
+                        if(t == iters-1):                        
+                            X_batch = X_train[t*batch_size:]
+                            y_batch = y_train[t*batch_size:]
+                        else:
+                            X_batch = X_train[t*batch_size:(t+1)*batch_size]
+                            y_batch = y_train[t*batch_size:(t+1)*batch_size]
+                        lb, rmse, ll = sess.run(
+                            [lower_bound, rmse, log_likelihood],
+                            feed_dict={n_samples: lb_samples,
+                                    is_training: False,
+                                    X: X_batch, y: y_batch})
+                        lbs.append(lb);rmses.append(rmse);lls.append(ll)
+                    train_lb, train_rmse, train_ll =\
+                        np.mean(lbs), np.mean(rmses), np.mean(lls)
                     time_train += time.time()
                     if(min_err>train_rmse/np.exp(train_ll)):
                         count_over_train = 0
@@ -239,16 +254,27 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         fold_train_lbs.append(train_lb)
                         fold_train_rmses.append(train_rmse)
                         fold_train_lls.append(train_ll)
-                    print('>>> TRAIN ({})'.format(min_err))
+                    print('>>> TRAIN ({:.1f}s) - min_err = {}'.format(time_train, min_err))
                     print('>> Train lower bound = {}'.format(train_lb))
                     print('>> Train rmse = {}'.format(train_rmse))
                     print('>> Train log_likelihood = {}'.format(train_ll))
+                    lbs, rmses, lls = [], [], []
                     time_test = -time.time()
-                    test_lb, test_rmse, test_ll = sess.run(
-                        [lower_bound, rmse, log_likelihood],
-                        feed_dict={n_samples: ll_samples,
-                                is_training: False,
-                                X: X_test, y: y_test})
+                    for t in range(iters):
+                        if(t == iters-1):                        
+                            X_batch = X_test[t*batch_size:]
+                            y_batch = y_test[t*batch_size:]
+                        else:
+                            X_batch = X_test[t*batch_size:(t+1)*batch_size]
+                            y_batch = y_test[t*batch_size:(t+1)*batch_size]
+                        lb, rmse, ll = sess.run(
+                            [lower_bound, rmse, log_likelihood],
+                            feed_dict={n_samples: ll_samples,
+                                    is_training: False,
+                                    X: X_batch, y: y_batch})
+                        lbs.append(lb);rmses.append(rmse);lls.append(ll)
+                    test_lb, test_rmse, test_ll =\
+                        np.mean(lbs), np.mean(rmses), np.mean(lls)
                     time_test += time.time()
                     if(len(fold_test_lbs)==0):
                         fold_test_lbs.append(test_lb)
