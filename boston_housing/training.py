@@ -80,55 +80,40 @@ if __name__ == '__main__':
     """
     Log Result of BNN{13,50,1}
         1st Batch
-            >>> BEST TEST
-            >> Test lower bound = -279.92181396484375
-            >> Test rmse = 2.7051913738250732
-            >> Test log_likelihood = -2.573483943939209
+            >> Test rmse = 2.69391036
+            >> Test log_likelihood = -2.60765600
         2nd Batch
-            >>> BEST TEST
-            >> Test lower bound = -414.76837158203125
-            >> Test rmse = 3.648686170578003
-            >> Test log_likelihood = -2.7757389545440674
+            >> Test rmse = 4.03287745
+            >> Test log_likelihood = -2.75631952
         3rd Batch
-            >>> BEST TEST
-            >> Test lower bound = -462.6261291503906
-            >> Test rmse = 3.4975883960723877
-            >> Test log_likelihood = -2.750476360321045
+            >> Test rmse = 3.64916301
+            >> Test log_likelihood = -2.76281524
         4th Batch
-            >>> BEST TEST
-            >> Test lower bound = -629.9293823242188
-            >> Test rmse = 4.956381320953369
-            >> Test log_likelihood = -3.2051596641540527
+            >> Test rmse = 7.72074556
+            >> Test log_likelihood = -3.22146368
         5th Batch
-            >>> BEST TEST
-            >> Test lower bound = -479.79803466796875
-            >> Test rmse = 3.3094685077667236
-            >> Test log_likelihood = -2.7854971885681152
+            >> Test rmse = 3.51188064
+            >> Test log_likelihood = -2.78703928
+        Overall
+            >> Test rmse = 4.66435121
+            >> Test log_likelihood = -2.82705879
     """
     # run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
     
     """
     Log Result of VAFNN{13,50,1}
         1st Batch
-            >>> BEST TEST
-            >> Test lower bound = -310.2062072753906
-            >> Test rmse = 2.5632693767547607
-            >> Test log_likelihood = -2.6489861011505127
+            >> Test rmse = 2.738891839981079
+            >> Test log_likelihood = -2.5407567024230957
         2nd Batch
-            >>> BEST TEST
-            >> Test lower bound = -414.76837158203125
-            >> Test rmse = 3.648686170578003
-            >> Test log_likelihood = -2.7757389545440674
+            >> Test rmse = 4.686698913574219
+            >> Test log_likelihood = -2.836054563522339
         3rd Batch
-            >>> BEST TEST
-            >> Test lower bound = -462.6261291503906
-            >> Test rmse = 3.4975883960723877
-            >> Test log_likelihood = -2.750476360321045
+            >> Test rmse = 4.089158535003662
+            >> Test log_likelihood = -2.745171070098877
         4th Batch
-            >>> BEST TEST
-            >> Test lower bound = -629.9293823242188
-            >> Test rmse = 4.956381320953369
-            >> Test log_likelihood = -3.2051596641540527
+            >> Test rmse = 7.8750457763671875
+            >> Test log_likelihood = -3.321596145629883
         5th Batch
             >>> BEST TEST
             >> Test lower bound = -479.79803466796875

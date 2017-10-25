@@ -28,37 +28,50 @@ import zhusuan as zs
 
 @zs.reuse('model')
 def variational_activation_functions_neural_networks(
-    observed, X, D, layer_sizes, drop_rate, n_samples, is_training):
+    observed, X, D, layer_sizes, n_basis, n_samples, is_training):
     with zs.BayesianNet(observed=observed) as model:
-        normalizer_params = {'is_training': is_training,
-                             'updates_collections': None}
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 3)
-        kern_logscale = tf.get_variable('kern_logscale',
-            shape=[len(layer_sizes)-2], initializer=tf.constant_initializer(0.))
         for i in range(len(layer_sizes)-1):
-            if(i == 0):
-                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]+1])
+            if(i < len(layer_sizes)-2):
+                if(i == 0):
+                    A = tf.get_variable('A'+str(i),
+                        shape=[1, 1, layer_sizes[i+1], layer_sizes[i]],
+                        initializer=tf.constant_initializer(0.))
+                    A = tf.tile(A, [n_samples, tf.shape(X)[0], 1, 1])
+                else:
+                    A = tf.get_variable('A'+str(i),
+                        shape=[1, 1, layer_sizes[i+1], n_basis*2],
+                        initializer=tf.constant_initializer(0.))
+                    A = tf.tile(A, [n_samples, tf.shape(X)[0], 1, 1])
+                b = tf.get_variable('b'+str(i),
+                    shape=[1, 1, layer_sizes[i+1], 1],
+                    initializer=tf.constant_initializer(0.))
+                b = tf.tile(b, [n_samples, tf.shape(X)[0], 1, 1])
+                f = tf.matmul(A, f)+b
+                w_mu = tf.zeros([1, n_basis, layer_sizes[i+1]])
                 w = zs.Normal('w'+str(i), w_mu, std=1.,
                             n_samples=n_samples, group_ndims=2)
                 w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
-                f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 2)
-                f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
-                f = tf.concat([tf.cos(f), tf.sin(f)], 2)/\
-                    (tf.exp(kern_logscale[i])*tf.sqrt(layer_sizes[i]+1.) )
-            elif(i < len(layer_sizes)-2):
-                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
-                w = zs.Normal('w'+str(i), w_mu, std=1.,
-                            n_samples=n_samples, group_ndims=2)
-                w = tf.tile(w, [1, tf.shape(X)[0], 1, 2])
-                f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
-                f = tf.concat([tf.cos(f), tf.sin(f)], 2)/\
-                    (tf.exp(kern_logscale[i])*tf.sqrt(layer_sizes[i]*1.) )
-            else:
-                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
-                w = zs.Normal('w'+str(i), w_mu, std=1.,
-                            n_samples=n_samples, group_ndims=2)
-                w = tf.tile(w, [1, tf.shape(X)[0], 1, 2])
-                f = tf.matmul(w, f)/tf.sqrt(layer_sizes[i]*1.)
+                c1 = tf.get_variable('c1'+str(i),
+                    shape=[1, 1, n_basis, 1],
+                    initializer=tf.constant_initializer(0.))
+                c1 = tf.tile(c1, [n_samples, tf.shape(X)[0], 1, 1])
+                c2 = tf.get_variable('c2'+str(i),
+                    shape=[1, 1, n_basis, 1],
+                    initializer=tf.constant_initializer(0.))
+                c2 = tf.tile(c2, [n_samples, tf.shape(X)[0], 1, 1])
+                d = tf.get_variable('d'+str(i),
+                    shape=[1, 1, n_basis*2, 1],
+                    initializer=tf.constant_initializer(0.))
+                d = tf.tile(d, [n_samples, tf.shape(X)[0], 1, 1])
+                f = tf.matmul(w, f)/np.sqrt(n_basis*1.)
+                f = tf.concat([tf.cos(f+c1), tf.sin(f+c2)], 2)+d
+                continue
+            w_mu = tf.zeros([1, layer_sizes[i+1], n_basis*2])
+            w = zs.Normal('w'+str(i), w_mu, std=1.,
+                        n_samples=n_samples, group_ndims=2)
+            w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
+            f = tf.matmul(w, f)/tf.sqrt(layer_sizes[i]*1.)
         y_mean = tf.squeeze(f, [2, 3])
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
@@ -66,33 +79,24 @@ def variational_activation_functions_neural_networks(
     return model, y_mean
 
 @zs.reuse('variational')
-def mean_field_variational(layer_sizes, n_samples):
+def mean_field_variational(layer_sizes, n_basis, n_samples):
     with zs.BayesianNet() as variational:
         for i in range(len(layer_sizes)-1):
-            if(i == 0):
+            if(i < len(layer_sizes)-2):
                 w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
+                    shape=[1, n_basis, layer_sizes[i+1]],
                     initializer=tf.constant_initializer(0.))
                 w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
-                    initializer=tf.constant_initializer(0.))
-                w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
-                        n_samples=n_samples, group_ndims=2)
-            elif(i < len(layer_sizes)-2):
-                w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
-                    initializer=tf.constant_initializer(0.))
-                w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
+                    shape=[1, n_basis, layer_sizes[i+1]],
                     initializer=tf.constant_initializer(0.))
                 w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
                         n_samples=n_samples, group_ndims=2)
             else:
                 w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
+                    shape=[1, layer_sizes[i+1], n_basis*2],
                     initializer=tf.constant_initializer(0.))
                 w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
+                    shape=[1, layer_sizes[i+1], n_basis*2],
                     initializer=tf.constant_initializer(0.))
                 w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
                         n_samples=n_samples, group_ndims=2)
@@ -115,10 +119,11 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
     np.random.seed(1234)
     
     # Define model parameters
-    drop_rate = 0.3 if 'drop_rate' not in args.keys() else args['drop_rate']
+    n_basis = 50 if 'n_basis' not in args.keys() else args['n_basis']
     n_hiddens = [50] if 'n_hiddens' not in args.keys() else args['n_hiddens']
 
     # Define training/evaluation parameters
+    save = False if 'save' not in args.keys() else args['save']
     plot_err = True if 'plot_err' not in args.keys() else args['plot_err']
     lb_samples = 20 if 'lb_samples' not in args.keys() else args['lb_samples']
     ll_samples = 100 if 'll_samples' not in args.keys() else args['ll_samples']
@@ -128,9 +133,10 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
     early_stop = 20 if 'early_stop' not in args.keys() else args['early_stop']
     learn_rate = 1e-3 if 'learn_rate' not in args.keys() else args['learn_rate']
     
-    eval_rmses, eval_lls = [], []
-    train_lbs, train_rmses, train_lls = [], [], []
-    test_lbs, test_rmses, test_lls = [], [], []
+    min_mse, max_nll = np.Infinity, -np.Infinity
+    eval_mses, eval_lls = [], []
+    train_lbs, train_mses, train_lls = [], [], []
+    test_lbs, test_mses, test_lls = [], [], []
     for fold, (X_train, y_train, X_test, y_test) in enumerate(train_test_set):
         
         problem_name = dataset_name.replace(' ', '_')+'_'+str(fold+1)
@@ -154,12 +160,12 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
     
         def log_joint(observed):
             model, _ = variational_activation_functions_neural_networks(
-                observed, X, D, layer_sizes, drop_rate, n_samples, is_training)
+                observed, X, D, layer_sizes, n_basis, n_samples, is_training)
             log_pws = model.local_log_prob(w_names)
             log_py_xw = model.local_log_prob('y')
             return tf.add_n(log_pws) + log_py_xw * N
     
-        variational = mean_field_variational(layer_sizes, n_samples)
+        variational = mean_field_variational(layer_sizes, n_basis, n_samples)
         qw_outputs = variational.query(w_names, outputs=True, local_log_prob=True)
         latent = dict(zip(w_names, qw_outputs))
         
@@ -176,13 +182,13 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
         infer_op = optimizer.minimize(cost, global_step=global_step)
         
     
-        # prediction: rmse & log likelihood
+        # prediction: mse & log likelihood
         observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
         observed.update({'y': y_obs})
         model, y_mean = variational_activation_functions_neural_networks(
-            observed, X, D, layer_sizes, drop_rate, n_samples, is_training)
+            observed, X, D, layer_sizes, n_basis, n_samples, is_training)
         y_pred = tf.reduce_mean(y_mean, 0)
-        rms_error = tf.sqrt(tf.reduce_mean((y_pred - y) ** 2)) * std_y_train
+        sqr_error = tf.reduce_mean(((y_pred - y)*std_y_train) ** 2)
         log_py_xw = model.local_log_prob('y')
         log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0)) - \
             tf.log(std_y_train)
@@ -193,11 +199,11 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
     
         # Run the inference
         lb_window, count_over_train = [], 0
-        fold_train_lbs, fold_train_rmses, fold_train_lls = [], [], []
-        fold_test_lbs, fold_test_rmses, fold_test_lls = [], [], []
+        fold_train_lbs, fold_train_mses, fold_train_lls = [], [], []
+        fold_test_lbs, fold_test_mses, fold_test_lls = [], [], []
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            max_lb, min_err = -np.Infinity, np.Infinity
+            max_lb, best_lb = -np.Infinity, -np.Infinity
             for epoch in range(1, max_epochs + 1):
                 time_epoch = -time.time()
                 lbs = []
@@ -226,7 +232,7 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                 if(max_lb < np.mean(lbs)):
                     max_lb = np.mean(lbs)
                 if epoch % check_freq == 0:
-                    lbs, rmses, lls = [], [], []
+                    lbs, mses, lls = [], [], []
                     time_train = -time.time()
                     for t in range(iters):
                         if(t == iters-1):                        
@@ -235,37 +241,29 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         else:
                             X_batch = X_train[t*batch_size:(t+1)*batch_size]
                             y_batch = y_train[t*batch_size:(t+1)*batch_size]
-                        lb, rmse, ll = sess.run(
-                            [lower_bound, rms_error, log_likelihood],
+                        lb, mse, ll = sess.run(
+                            [lower_bound, sqr_error, log_likelihood],
                             feed_dict={n_samples: ll_samples,
                                     is_training: False,
                                     X: X_batch, y: y_batch})
-                        lbs.append(lb);rmses.append(rmse);lls.append(ll)
-                    train_lb, train_rmse, train_ll =\
-                        np.mean(lbs), np.mean(rmses), np.mean(lls)
+                        lbs.append(lb);mses.append(mse);lls.append(ll)
+                    train_lb, train_mse, train_ll =\
+                        np.mean(lbs), np.mean(mses), np.mean(lls)
                     time_train += time.time()
-                    if(min_err>train_rmse/np.exp(train_ll)):
-                        count_over_train = 0
-                        min_err = train_rmse/np.exp(train_ll)
-                        saver = tf.train.Saver()
-                        if not os.path.exists('./trained/'):
-                            os.makedirs('./trained/')
-                        saver.save(sess, './trained/'+model_name+'_'+problem_name)
-                    else:
-                        count_over_train += 1
                     if(len(fold_train_lbs)==0):
                         fold_train_lbs.append(train_lb)
-                        fold_train_rmses.append(train_rmse)
+                        fold_train_mses.append(train_mse)
                         fold_train_lls.append(train_ll)
                     else:
                         fold_train_lbs.append(train_lb)
-                        fold_train_rmses.append(train_rmse)
+                        fold_train_mses.append(train_mse)
                         fold_train_lls.append(train_ll)
-                    print('>>> TRAIN ({:.1f}s) - min_err = {}'.format(time_train, min_err))
+                    print('>>> TRAIN ({:.1f}s) - best_lb = {}'.format(
+                        time_train, best_lb))
                     print('>> Train lower bound = {}'.format(train_lb))
-                    print('>> Train rmse = {}'.format(train_rmse))
+                    print('>> Train rmse = {}'.format(np.sqrt(train_mse)))
                     print('>> Train log_likelihood = {}'.format(train_ll))
-                    lbs, rmses, lls = [], [], []
+                    lbs, mses, lls = [], [], []
                     time_test = -time.time()
                     t_iters = int(np.floor(X_test.shape[0] / float(batch_size)))
                     for t in range(t_iters):
@@ -275,65 +273,81 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         else:
                             X_batch = X_test[t*batch_size:(t+1)*batch_size]
                             y_batch = y_test[t*batch_size:(t+1)*batch_size]
-                        lb, rmse, ll = sess.run(
-                            [lower_bound, rms_error, log_likelihood],
+                        lb, mse, ll = sess.run(
+                            [lower_bound, sqr_error, log_likelihood],
                             feed_dict={n_samples: ll_samples,
                                     is_training: False,
                                     X: X_batch, y: y_batch})
-                        lbs.append(lb);rmses.append(rmse);lls.append(ll)
-                    test_lb, test_rmse, test_ll =\
-                        np.mean(lbs), np.mean(rmses), np.mean(lls)
+                        lbs.append(lb);mses.append(mse);lls.append(ll)
+                    test_lb, test_mse, test_ll =\
+                        np.mean(lbs), np.mean(mses), np.mean(lls)
                     time_test += time.time()
                     if(len(fold_test_lbs)==0):
                         fold_test_lbs.append(test_lb)
-                        fold_test_rmses.append(test_rmse)
+                        fold_test_mses.append(test_mse)
                         fold_test_lls.append(test_ll)
                     else:
                         fold_test_lbs.append(test_lb)
-                        fold_test_rmses.append(test_rmse)
+                        fold_test_mses.append(test_mse)
                         fold_test_lls.append(test_ll)
                     print('>>> TEST ({:.1f}s)'.format(time_test))
                     print('>> Test lower bound = {}'.format(test_lb))
-                    print('>> Test rmse = {}'.format(test_rmse))
+                    print('>> Test rmse = {}'.format(np.sqrt(test_mse)))
                     print('>> Test log_likelihood = {}'.format(test_ll))
-                if(count_over_train > early_stop):
-                    break
+                    if(best_lb<train_lb):
+                        count_over_train = 0
+                        best_lb = train_lb
+                        if(save):
+                            saver = tf.train.Saver()
+                            if not os.path.exists('./trained/'):
+                                os.makedirs('./trained/')
+                            saver.save(sess,
+                                './trained/'+model_name+'_'+problem_name)
+                        else:
+                            min_mse, max_ll = test_mse, test_ll
+                    else:
+                        count_over_train += 1
+                    if(count_over_train > early_stop):
+                        break
             
             # Load the selected best params and evaluate its performance
-            saver = tf.train.Saver()
-            saver.restore(sess, './trained/'+model_name+'_'+problem_name)
-            lbs, rmses, lls = [], [], []
-            t_iters = int(np.floor(X_test.shape[0] / float(batch_size)))
-            for t in range(t_iters):
-                if(t == t_iters-1):                   
-                    X_batch = X_test[t*batch_size:]
-                    y_batch = y_test[t*batch_size:]
-                else:
-                    X_batch = X_test[t*batch_size:(t+1)*batch_size]
-                    y_batch = y_test[t*batch_size:(t+1)*batch_size]
-                lb, rmse, ll = sess.run(
-                    [lower_bound, rms_error, log_likelihood],
-                    feed_dict={n_samples: ll_samples,
-                            is_training: False,
-                            X: X_batch, y: y_batch})
-                lbs.append(lb);rmses.append(rmse);lls.append(ll)
-            test_lb, test_rmse, test_ll =\
-                np.mean(lbs), np.mean(rmses), np.mean(lls)
+            if(save):
+                saver = tf.train.Saver()
+                saver.restore(sess, './trained/'+model_name+'_'+problem_name)
+                mses, lls = [], []
+                t_iters = int(np.floor(X_test.shape[0] / float(batch_size)))
+                for t in range(t_iters):
+                    if(t == t_iters-1):                   
+                        X_batch = X_test[t*batch_size:]
+                        y_batch = y_test[t*batch_size:]
+                    else:
+                        X_batch = X_test[t*batch_size:(t+1)*batch_size]
+                        y_batch = y_test[t*batch_size:(t+1)*batch_size]
+                    mse, ll = sess.run(
+                        [sqr_error, log_likelihood],
+                        feed_dict={n_samples: ll_samples,
+                                is_training: False,
+                                X: X_batch, y: y_batch})
+                    mses.append(mse);lls.append(ll)
+                test_mse, test_ll = np.mean(mses), np.mean(lls)
+            else:
+                test_mse, test_ll = min_mse, max_ll
             print('>>> BEST TEST')
-            print('>> Test lower bound = {}'.format(test_lb))
-            print('>> Test rmse = {}'.format(test_rmse))
+            print('>> Test rmse = {}'.format(np.sqrt(test_mse)))
             print('>> Test log_likelihood = {}'.format(test_ll))
-            eval_rmses.append(test_rmse)
+            eval_mses.append(test_mse)
             eval_lls.append(test_ll)
         if(plot_err):
             import matplotlib.pyplot as plt
             plt.figure()
             plt.subplot(2, 1, 1)        
             plt.title(model_name+" on "+dataset_name)
-            test_max_epochs = (np.arange(len(fold_train_rmses))+1)*check_freq
-            plt.semilogx(test_max_epochs, fold_train_rmses, '--', label='Train')
-            plt.semilogx(test_max_epochs, fold_test_rmses, label='Test')
-            plt.legend(loc='upper right')
+            test_max_epochs = (np.arange(len(fold_train_mses))+1)*check_freq
+            plt.semilogx(test_max_epochs,
+                np.sqrt(fold_train_mses), '--', label='Train')
+            plt.semilogx(test_max_epochs,
+                np.sqrt(fold_test_mses), label='Test')
+            plt.legend(loc='lower left')
             plt.xlabel('Epoch')
             plt.ylabel('RMSE')
             
@@ -348,12 +362,14 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
             plt.savefig('./plots/'+model_name+'_'+problem_name+'.png')
             plt.close()
         train_lbs.append(np.array(fold_train_lbs))
-        train_rmses.append(np.array(fold_train_rmses))
+        train_mses.append(np.array(fold_train_mses))
         train_lls.append(np.array(fold_train_lls))
         test_lbs.append(np.array(fold_test_lbs))
-        test_rmses.append(np.array(fold_test_rmses))
+        test_mses.append(np.array(fold_test_mses))
         test_lls.append(np.array(fold_test_lls))
     print('>>> OVERALL TEST')
-    print('>> Overall Test rmse = {}'.format(np.mean(eval_rmses)))
-    print('>> Overall Test log_likelihood = {}'.format(np.mean(eval_lls)))
-    return eval_rmses, eval_lls
+    print('>> Overall Test rmse = {} +/- {}'.format(
+        np.sqrt(np.mean(eval_mses)), 1.96*np.sqrt(np.std(eval_mses))))
+    print('>> Overall Test log_likelihood = {} +/- {}'.format(
+        np.sqrt(np.mean(eval_lls)), 1.96*np.sqrt(np.std(eval_lls))))
+    return eval_mses, eval_lls
