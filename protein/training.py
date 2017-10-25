@@ -63,17 +63,17 @@ if __name__ == '__main__':
 
     training_settings = {
         'plot_err': True,
-        'lb_samples': 20,
+        'lb_samples': 10,
         'll_samples': 100,
-        'n_hiddens': [50],
-        'drop_rate': 0.5,
+        'n_hiddens': [100, 50, 2],
+        'drop_rate': 0.3,
         'batch_size': 50,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
-        'early_stop': 10,
+        'early_stop': 20,
         'check_freq': 10,
     }
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
-    run_bnn_experiment('Protein', load_data(10), **training_settings)
-    run_vafnn_experiment('Protein', load_data(10), **training_settings)
+    run_bnn_experiment('Protein', load_data(5), **training_settings)
+    run_vafnn_experiment('Protein', load_data(5), **training_settings)
