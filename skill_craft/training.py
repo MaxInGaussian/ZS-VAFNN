@@ -65,7 +65,7 @@ if __name__ == '__main__':
         'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
-        'n_hiddens': [100],
+        'n_hiddens': [60, 30, 2],
         'drop_rate': 0.5,
         'batch_size': 50,
         'learn_rate': 1e-3,

@@ -1,2 +1,2 @@
-model_checkpoint_path: "BNN{20,100,1}_Parkinsons_1"
-all_model_checkpoint_paths: "BNN{20,100,1}_Parkinsons_1"
+model_checkpoint_path: "BNN{20,100,50,2,1}_Parkinsons_1"
+all_model_checkpoint_paths: "BNN{20,100,50,2,1}_Parkinsons_1"
