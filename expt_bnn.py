@@ -314,6 +314,9 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
             plt.semilogx(test_max_epochs, fold_test_lls, label='Test')
             plt.xlabel('Epoch')
             plt.ylabel('Log Likelihood {:.4f}'.format(test_ll))
+            if not os.path.exists('./plots/'):
+                os.makedirs('./plots/')
+            plt.savefig('./plots/'+model_name+'_'+problem_name+'.png')
             plt.close()
         train_lbs.append(np.array(fold_train_lbs))
         train_mses.append(np.array(fold_train_mses))
