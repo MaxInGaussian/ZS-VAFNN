@@ -67,7 +67,7 @@ if __name__ == '__main__':
         'll_samples': 100,
         'n_hiddens': [80, 40, 2],
         'drop_rate': 0.5,
-        'batch_size': 200,
+        'batch_size': 50,
         'learn_rate': 1e-2,
         'max_epochs': 2000,
         'early_stop': 20,
@@ -75,5 +75,5 @@ if __name__ == '__main__':
     }
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
-    run_bnn_experiment('Parkinsons', load_data(10), **training_settings)
-    run_vafnn_experiment('Parkinsons', load_data(10), **training_settings)
+    run_bnn_experiment('Parkinsons', load_data(5), **training_settings)
+    run_vafnn_experiment('Parkinsons', load_data(5), **training_settings)

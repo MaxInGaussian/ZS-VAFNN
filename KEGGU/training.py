@@ -75,5 +75,5 @@ if __name__ == '__main__':
     }
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
-    run_bnn_experiment('KEGGU', load_data(10), **training_settings)
-    run_vafnn_experiment('KEGGU', load_data(10), **training_settings)
+    run_bnn_experiment('KEGGU', load_data(5), **training_settings)
+    run_vafnn_experiment('KEGGU', load_data(5), **training_settings)
