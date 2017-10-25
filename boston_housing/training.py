@@ -68,7 +68,7 @@ if __name__ == '__main__':
         'll_samples': 100,
         'n_hiddens': [50],
         'drop_rate': 0.5,
-        'batch_size': 50,
+        'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
         'early_stop': 10,
@@ -76,5 +76,5 @@ if __name__ == '__main__':
     }
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
-    run_bnn_experiment('Boston Housing', load_data(10), **training_settings)
-    run_vafnn_experiment('Boston Housing', load_data(10), **training_settings)
+    run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
+    run_vafnn_experiment('Boston Housing', load_data(5), **training_settings)

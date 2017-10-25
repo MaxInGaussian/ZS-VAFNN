@@ -198,7 +198,7 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
                             y_batch = y_train[t*batch_size:(t+1)*batch_size]
                         lb, rmse, ll = sess.run(
                             [lower_bound, rms_error, log_likelihood],
-                            feed_dict={n_samples: lb_samples,
+                            feed_dict={n_samples: ll_samples,
                                     is_training: False,
                                     X: X_batch, y: y_batch})
                         lbs.append(lb);rmses.append(rmse);lls.append(ll)
@@ -228,8 +228,9 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
                     print('>> Train log_likelihood = {}'.format(train_ll))
                     lbs, rmses, lls = [], [], []
                     time_test = -time.time()
-                    for t in range(iters):
-                        if(t == iters-1):                        
+                    t_iters = int(np.floor(X_test.shape[0] / float(batch_size)))
+                    for t in range(t_iters):
+                        if(t == t_iters-1):                        
                             X_batch = X_test[t*batch_size:]
                             y_batch = y_test[t*batch_size:]
                         else:
@@ -262,8 +263,10 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
             # Load the selected best params and evaluate its performance
             saver = tf.train.Saver()
             saver.restore(sess, './trained/'+model_name+'_'+problem_name)
-            for t in range(iters):
-                if(t == iters-1):                        
+            lbs, rmses, lls = [], [], []
+            t_iters = int(np.floor(X_test.shape[0] / float(batch_size)))
+            for t in range(t_iters):
+                if(t == t_iters-1):              
                     X_batch = X_test[t*batch_size:]
                     y_batch = y_test[t*batch_size:]
                 else:

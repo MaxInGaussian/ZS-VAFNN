@@ -68,7 +68,7 @@ if __name__ == '__main__':
         'n_hiddens': [100, 50, 2],
         'drop_rate': 0.3,
         'batch_size': 50,
-        'learn_rate': 1e-3,
+        'learn_rate': 1e-2,
         'max_epochs': 2000,
         'early_stop': 20,
         'check_freq': 10,

@@ -1,2 +1,2 @@
-model_checkpoint_path: "BNN{13,50,1}_Boston_Housing_7"
-all_model_checkpoint_paths: "BNN{13,50,1}_Boston_Housing_7"
+model_checkpoint_path: "BNN{13,50,1}_Boston_Housing_2"
+all_model_checkpoint_paths: "BNN{13,50,1}_Boston_Housing_2"
