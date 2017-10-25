@@ -105,7 +105,7 @@ if __name__ == '__main__':
             >> Test rmse = 3.3094685077667236
             >> Test log_likelihood = -2.7854971885681152
     """
-    run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
+    # run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
     
     """
     Log Result of VAFNN{13,50,1}

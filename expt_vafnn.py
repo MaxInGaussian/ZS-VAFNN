@@ -36,23 +36,23 @@ def variational_activation_functions_neural_networks(
         kern_logscale = tf.get_variable('kern_logscale',
             shape=[len(layer_sizes)-2], initializer=tf.constant_initializer(0.))
         for i in range(len(layer_sizes)-1):
-            # if(i == 0):
-            #     f = tf.transpose(f, perm=[0, 1, 3, 2])
-            #     f = layers.fully_connected(
-            #         f, layer_sizes[i+1],
-            #         normalizer_fn=layers.batch_norm,
-            #         normalizer_params=normalizer_params)
-            #     f = layers.dropout(f, drop_rate, is_training=True)
-            #     f = tf.transpose(f, perm=[0, 1, 3, 2])
-            if(i < len(layer_sizes)-2):
-                w_mu = tf.zeros([1, layer_sizes[i+1]//2, layer_sizes[i]+1])
+            if(i == 0):
+                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]+1])
                 w = zs.Normal('w'+str(i), w_mu, std=1.,
                             n_samples=n_samples, group_ndims=2)
-                w = tf.tile(w, [1, tf.shape(X)[0], 2, 1])
+                w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
                 f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 2)
                 f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
                 f = tf.concat([tf.cos(f), tf.sin(f)], 2)/\
-                    (tf.exp(kern_logscale[i-1])*tf.sqrt(layer_sizes[i]*1.) )
+                    (tf.exp(kern_logscale[i])*tf.sqrt(layer_sizes[i]+1.) )
+            elif(i < len(layer_sizes)-2):
+                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
+                w = zs.Normal('w'+str(i), w_mu, std=1.,
+                            n_samples=n_samples, group_ndims=2)
+                w = tf.tile(w, [1, tf.shape(X)[0], 1, 2])
+                f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
+                f = tf.concat([tf.cos(f), tf.sin(f)], 2)/\
+                    (tf.exp(kern_logscale[i])*tf.sqrt(layer_sizes[i]*1.) )
             else:
                 w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
                 w = zs.Normal('w'+str(i), w_mu, std=1.,
@@ -69,12 +69,21 @@ def variational_activation_functions_neural_networks(
 def mean_field_variational(layer_sizes, n_samples):
     with zs.BayesianNet() as variational:
         for i in range(len(layer_sizes)-1):
-            if(i < len(layer_sizes)-2):
+            if(i == 0):
                 w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1]//2, layer_sizes[i]+1],
+                    shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
                     initializer=tf.constant_initializer(0.))
                 w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1]//2, layer_sizes[i]+1],
+                    shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
+                    initializer=tf.constant_initializer(0.))
+                w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
+                        n_samples=n_samples, group_ndims=2)
+            elif(i < len(layer_sizes)-2):
+                w_mean = tf.get_variable('w_mean_'+str(i),
+                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
+                    initializer=tf.constant_initializer(0.))
+                w_logstd = tf.get_variable('w_logstd_'+str(i),
+                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
                     initializer=tf.constant_initializer(0.))
                 w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
                         n_samples=n_samples, group_ndims=2)

@@ -65,7 +65,7 @@ if __name__ == '__main__':
         'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
-        'n_hiddens': [60, 30, 2],
+        'n_hiddens': [60, 30, 6],
         'drop_rate': 0.5,
         'batch_size': 50,
         'learn_rate': 1e-3,
@@ -75,5 +75,5 @@ if __name__ == '__main__':
     }
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
-    run_bnn_experiment('Skill Craft', load_data(5), **training_settings)
+    # run_bnn_experiment('Skill Craft', load_data(5), **training_settings)
     run_vafnn_experiment('Skill Craft', load_data(5), **training_settings)
