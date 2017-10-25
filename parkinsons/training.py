@@ -39,7 +39,7 @@ def load_data(n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=0)
     data = data.as_matrix().astype(np.float32)
-    X, y = data[:, :-1], data[:, -1]
+    X, y = np.hstack((data[:, :4], data[:, 5:])), data[:, 4]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
