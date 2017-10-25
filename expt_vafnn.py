@@ -67,10 +67,10 @@ def variational_activation_functions_neural_networks(
                 f = tf.matmul(w, f)/np.sqrt(n_basis*1.)
                 f = tf.concat([tf.cos(f+c1), tf.sin(f+c2)], 2)+d
                 continue
-            w_mu = tf.zeros([1, layer_sizes[i+1], n_basis*2])
+            w_mu = tf.zeros([1, layer_sizes[i+1], n_basis])
             w = zs.Normal('w'+str(i), w_mu, std=1.,
                         n_samples=n_samples, group_ndims=2)
-            w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
+            w = tf.tile(w, [1, tf.shape(X)[0], 1, 2])
             f = tf.matmul(w, f)/tf.sqrt(layer_sizes[i]*1.)
         y_mean = tf.squeeze(f, [2, 3])
         y_logstd = tf.get_variable('y_logstd', shape=[],
@@ -93,10 +93,10 @@ def mean_field_variational(layer_sizes, n_basis, n_samples):
                         n_samples=n_samples, group_ndims=2)
             else:
                 w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], n_basis*2],
+                    shape=[1, layer_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
                 w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1], n_basis*2],
+                    shape=[1, layer_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
                 w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
                         n_samples=n_samples, group_ndims=2)
@@ -222,11 +222,11 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                                 X: X_batch, y: y_batch})
                     lbs.append(lb)
                 time_epoch += time.time()
-                print('Epoch {} ({:.1f}s, {}): Lower bound = {}'.format(
+                print('Epoch {} ({:.1f}s, {}): Lower bound = {:.8f}'.format(
                     epoch, time_epoch, count_over_train, np.mean(lbs)))
                 if(len(lb_window)>=early_stop):
                     del lb_window[0]
-                    if(max_lb>np.max(lb_window)+2*np.std(lb_window)):
+                    if(max_lb>np.max(lb_window)+np.std(lb_window)):
                         count_over_train += 1
                 lb_window.append(np.mean(lbs))
                 if(max_lb < np.mean(lbs)):
@@ -258,11 +258,11 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         fold_train_lbs.append(train_lb)
                         fold_train_mses.append(train_mse)
                         fold_train_lls.append(train_ll)
-                    print('>>> TRAIN ({:.1f}s) - best_lb = {}'.format(
+                    print('>>> TRAIN ({:.1f}s) - best_lb = {:.8f}'.format(
                         time_train, best_lb))
-                    print('>> Train lower bound = {}'.format(train_lb))
-                    print('>> Train rmse = {}'.format(np.sqrt(train_mse)))
-                    print('>> Train log_likelihood = {}'.format(train_ll))
+                    print('>> Train lower bound = {:.8f}'.format(train_lb))
+                    print('>> Train rmse = {:.8f}'.format(np.sqrt(train_mse)))
+                    print('>> Train log_likelihood = {:.8f}'.format(train_ll))
                     lbs, mses, lls = [], [], []
                     time_test = -time.time()
                     t_iters = int(np.floor(X_test.shape[0] / float(batch_size)))
@@ -291,9 +291,9 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                         fold_test_mses.append(test_mse)
                         fold_test_lls.append(test_ll)
                     print('>>> TEST ({:.1f}s)'.format(time_test))
-                    print('>> Test lower bound = {}'.format(test_lb))
-                    print('>> Test rmse = {}'.format(np.sqrt(test_mse)))
-                    print('>> Test log_likelihood = {}'.format(test_ll))
+                    print('>> Test lower bound = {:.8f}'.format(test_lb))
+                    print('>> Test rmse = {:.8f}'.format(np.sqrt(test_mse)))
+                    print('>> Test log_likelihood = {:.8f}'.format(test_ll))
                     if(best_lb<train_lb):
                         count_over_train = 0
                         best_lb = train_lb
@@ -333,8 +333,8 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
             else:
                 test_mse, test_ll = min_mse, max_ll
             print('>>> BEST TEST')
-            print('>> Test rmse = {}'.format(np.sqrt(test_mse)))
-            print('>> Test log_likelihood = {}'.format(test_ll))
+            print('>> Test rmse = {:.8f}'.format(np.sqrt(test_mse)))
+            print('>> Test log_likelihood = {:.8f}'.format(test_ll))
             eval_mses.append(test_mse)
             eval_lls.append(test_ll)
         if(plot_err):
@@ -349,14 +349,14 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
                 np.sqrt(fold_test_mses), label='Test')
             plt.legend(loc='lower left')
             plt.xlabel('Epoch')
-            plt.ylabel('RMSE')
+            plt.ylabel('RMSE {:.4f}'.format(np.sqrt(test_mse)))
             
             plt.subplot(2, 1, 2)
             test_max_epochs = (np.arange(len(fold_train_lls))+1)*check_freq
             plt.semilogx(test_max_epochs, fold_train_lls, '--', label='Train')
             plt.semilogx(test_max_epochs, fold_test_lls, label='Test')
             plt.xlabel('Epoch')
-            plt.ylabel('Log Likelihood')
+            plt.ylabel('Log Likelihood {:.4f}'.format(test_ll))
             if not os.path.exists('./plots/'):
                 os.makedirs('./plots/')
             plt.savefig('./plots/'+model_name+'_'+problem_name+'.png')
@@ -368,8 +368,8 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
         test_mses.append(np.array(fold_test_mses))
         test_lls.append(np.array(fold_test_lls))
     print('>>> OVERALL TEST')
-    print('>> Overall Test rmse = {} +/- {}'.format(
+    print('>> Overall Test rmse = {:.8f} +/- {:.8f}'.format(
         np.sqrt(np.mean(eval_mses)), 1.96*np.sqrt(np.std(eval_mses))))
-    print('>> Overall Test log_likelihood = {} +/- {}'.format(
+    print('>> Overall Test log_likelihood = {:.8f} +/- {:.8f}'.format(
         np.sqrt(np.mean(eval_lls)), 1.96*np.sqrt(np.std(eval_lls))))
     return eval_mses, eval_lls

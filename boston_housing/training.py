@@ -67,8 +67,8 @@ if __name__ == '__main__':
         'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
+        'n_basis': 100,
         'n_hiddens': [50],
-        'drop_rate': 0.5,
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
@@ -98,13 +98,13 @@ if __name__ == '__main__':
             >> Test rmse = 4.66435121
             >> Test log_likelihood = -2.82705879
     """
-    # run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
+    run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
     
     """
     Log Result of VAFNN{13,50,1}
         1st Batch
-            >> Test rmse = 2.738891839981079
-            >> Test log_likelihood = -2.5407567024230957
+            >> Test rmse = 2.5582997798919678
+            >> Test log_likelihood = -2.48785662651062
         2nd Batch
             >> Test rmse = 4.686698913574219
             >> Test log_likelihood = -2.836054563522339
@@ -115,8 +115,6 @@ if __name__ == '__main__':
             >> Test rmse = 7.8750457763671875
             >> Test log_likelihood = -3.321596145629883
         5th Batch
-            >>> BEST TEST
-            >> Test lower bound = -479.79803466796875
             >> Test rmse = 3.3094685077667236
             >> Test log_likelihood = -2.7854971885681152
     """
