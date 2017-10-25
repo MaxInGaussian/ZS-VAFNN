@@ -27,38 +27,18 @@ import numpy as np
 import zhusuan as zs
 
 @zs.reuse('model')
-def variational_activation_functions_neural_networks(
-    observed, X, D, layer_sizes, drop_rate, n_samples, is_training):
+def bayesian_neural_networks(observed, X, D, layer_sizes, n_samples):
     with zs.BayesianNet(observed=observed) as model:
-        normalizer_params = {'is_training': is_training,
-                             'updates_collections': None}
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 3)
-        kern_logscale = tf.get_variable('kern_logscale',
-            shape=[len(layer_sizes)-2], initializer=tf.constant_initializer(0.))
         for i in range(len(layer_sizes)-1):
-            if(i == 0):
-                f = tf.transpose(f, perm=[0, 1, 3, 2])
-                f = layers.fully_connected(
-                    f, layer_sizes[i+1]*2,
-                    normalizer_fn=layers.batch_norm,
-                    normalizer_params=normalizer_params)
-                f = layers.dropout(f, drop_rate, is_training=True)
-                f = tf.transpose(f, perm=[0, 1, 3, 2])
-            elif(0 < i < len(layer_sizes)-2):
-                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]])
-                w = zs.Normal('w'+str(i), w_mu, std=1.,
-                            n_samples=n_samples, group_ndims=2)
-                w = tf.tile(w, [1, tf.shape(X)[0], 1, 2])
-                f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]*1.)
-                f = tf.concat([tf.cos(f), tf.sin(f)], 2)/\
-                    (tf.exp(kern_logscale[i-1])*tf.sqrt(layer_sizes[i]*1.) )
-            else:
-                w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]*2+1])
-                w = zs.Normal('w'+str(i), w_mu, std=1.,
-                            n_samples=n_samples, group_ndims=2)
-                w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])            
-                f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 2)
-                f = tf.matmul(w, f)/tf.sqrt(layer_sizes[i]*2+1.)
+            w_mu = tf.zeros([1, layer_sizes[i+1], layer_sizes[i]+1])
+            w = zs.Normal('w'+str(i), w_mu, std=1.,
+                          n_samples=n_samples, group_ndims=2)
+            w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
+            f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 2)
+            f = tf.matmul(w, f) / tf.sqrt(layer_sizes[i]+1.)
+            if(i < len(layer_sizes)-2):
+                f = tf.nn.relu(f)
         y_mean = tf.squeeze(f, [2, 3])
         y_logstd = tf.get_variable('y_logstd', shape=[],
                                    initializer=tf.constant_initializer(0.))
@@ -69,26 +49,14 @@ def variational_activation_functions_neural_networks(
 def mean_field_variational(layer_sizes, n_samples):
     with zs.BayesianNet() as variational:
         for i in range(len(layer_sizes)-1):
-            if(i == 0):
-                pass
-            elif(0 < i < len(layer_sizes)-2):
-                w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
-                    initializer=tf.constant_initializer(0.))
-                w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]],
-                    initializer=tf.constant_initializer(0.))
-                w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
-                        n_samples=n_samples, group_ndims=2)
-            else:
-                w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]*2+1],
-                    initializer=tf.constant_initializer(0.))
-                w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, layer_sizes[i+1], layer_sizes[i]*2+1],
-                    initializer=tf.constant_initializer(0.))
-                w = zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
-                        n_samples=n_samples, group_ndims=2)
+            w_mean = tf.get_variable('w_mean_'+str(i),
+                shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
+                initializer=tf.constant_initializer(0.))
+            w_logstd = tf.get_variable('w_logstd_'+str(i),
+                shape=[1, layer_sizes[i+1], layer_sizes[i]+1],
+                initializer=tf.constant_initializer(0.))
+            zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
+                      n_samples=n_samples, group_ndims=2)
     return variational
 
 
@@ -102,7 +70,7 @@ def standardize(data_train, data_test):
     return data_train_standardized, data_test_standardized, mean, std
 
 
-def run_vafnn_experiment(dataset_name, train_test_set, **args):
+def run_bnn_experiment(dataset_name, train_test_set, **args):
     
     tf.set_random_seed(1237)
     np.random.seed(1234)
@@ -142,12 +110,12 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
         y = tf.placeholder(tf.float32, shape=[None])
         y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1])
         layer_sizes = [D]+n_hiddens+[1]
-        w_names = ['w' + str(i) for i in range(1, len(layer_sizes) - 1)]
-        model_name = "VAFNN{"+",".join(list(map(str, layer_sizes)))+"}"
+        w_names = ['w' + str(i) for i in range(len(layer_sizes) - 1)]
+        model_name = "BNN{"+",".join(list(map(str, layer_sizes)))+"}"
     
         def log_joint(observed):
-            model, _ = variational_activation_functions_neural_networks(
-                observed, X, D, layer_sizes, drop_rate, n_samples, is_training)
+            model, _ = bayesian_neural_networks(
+                observed, X, D, layer_sizes, n_samples)
             log_pws = model.local_log_prob(w_names)
             log_py_xw = model.local_log_prob('y')
             return tf.add_n(log_pws) + log_py_xw * N
@@ -172,8 +140,8 @@ def run_vafnn_experiment(dataset_name, train_test_set, **args):
         # prediction: rmse & log likelihood
         observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
         observed.update({'y': y_obs})
-        model, y_mean = variational_activation_functions_neural_networks(
-            observed, X, D, layer_sizes, drop_rate, n_samples, is_training)
+        model, y_mean = bayesian_neural_networks(
+                observed, X, D, layer_sizes, n_samples)
         y_pred = tf.reduce_mean(y_mean, 0)
         rmse = tf.sqrt(tf.reduce_mean((y_pred - y) ** 2)) * std_y_train
         log_py_xw = model.local_log_prob('y')
