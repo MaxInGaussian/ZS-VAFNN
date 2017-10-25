@@ -61,7 +61,8 @@ if __name__ == '__main__':
 
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
+    
+    # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'plot_err': True,
         'lb_samples': 20,
@@ -75,6 +76,63 @@ if __name__ == '__main__':
         'check_freq': 10,
     }
     
-    # Fair Model Comparison - Same Architecture & Optimization Rule
+
+    """
+    Log Result of BNN{13,50,1}
+        1st Batch
+            >>> BEST TEST
+            >> Test lower bound = -279.92181396484375
+            >> Test rmse = 2.7051913738250732
+            >> Test log_likelihood = -2.573483943939209
+        2nd Batch
+            >>> BEST TEST
+            >> Test lower bound = -414.76837158203125
+            >> Test rmse = 3.648686170578003
+            >> Test log_likelihood = -2.7757389545440674
+        3rd Batch
+            >>> BEST TEST
+            >> Test lower bound = -462.6261291503906
+            >> Test rmse = 3.4975883960723877
+            >> Test log_likelihood = -2.750476360321045
+        4th Batch
+            >>> BEST TEST
+            >> Test lower bound = -629.9293823242188
+            >> Test rmse = 4.956381320953369
+            >> Test log_likelihood = -3.2051596641540527
+        5th Batch
+            >>> BEST TEST
+            >> Test lower bound = -479.79803466796875
+            >> Test rmse = 3.3094685077667236
+            >> Test log_likelihood = -2.7854971885681152
+    """
     run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
+    
+    """
+    Log Result of VAFNN{13,50,1}
+        1st Batch
+            >>> BEST TEST
+            >> Test lower bound = -284.3058776855469
+            >> Test rmse = 2.41357421875
+            >> Test log_likelihood = -2.6123440265655518
+        2nd Batch
+            >>> BEST TEST
+            >> Test lower bound = -414.76837158203125
+            >> Test rmse = 3.648686170578003
+            >> Test log_likelihood = -2.7757389545440674
+        3rd Batch
+            >>> BEST TEST
+            >> Test lower bound = -462.6261291503906
+            >> Test rmse = 3.4975883960723877
+            >> Test log_likelihood = -2.750476360321045
+        4th Batch
+            >>> BEST TEST
+            >> Test lower bound = -629.9293823242188
+            >> Test rmse = 4.956381320953369
+            >> Test log_likelihood = -3.2051596641540527
+        5th Batch
+            >>> BEST TEST
+            >> Test lower bound = -479.79803466796875
+            >> Test rmse = 3.3094685077667236
+            >> Test log_likelihood = -2.7854971885681152
+    """
     run_vafnn_experiment('Boston Housing', load_data(5), **training_settings)
