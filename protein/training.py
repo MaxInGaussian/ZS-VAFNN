@@ -66,7 +66,7 @@ if __name__ == '__main__':
         'lb_samples': 20,
         'll_samples': 100,
         'n_basis': 100,
-        'n_hiddens': [50],
+        'n_hiddens': [200, 80, 20],
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
