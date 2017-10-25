@@ -137,13 +137,13 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
         infer_op = optimizer.minimize(cost, global_step=global_step)
         
     
-        # prediction: rmse & log likelihood
+        # prediction: rms error & log likelihood
         observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
         observed.update({'y': y_obs})
         model, y_mean = bayesian_neural_networks(
                 observed, X, D, layer_sizes, n_samples)
         y_pred = tf.reduce_mean(y_mean, 0)
-        rmse = tf.sqrt(tf.reduce_mean((y_pred - y) ** 2)) * std_y_train
+        rms_error = tf.sqrt(tf.reduce_mean((y_pred - y) ** 2)) * std_y_train
         log_py_xw = model.local_log_prob('y')
         log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0)) - \
             tf.log(std_y_train)
@@ -197,7 +197,7 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
                             X_batch = X_train[t*batch_size:(t+1)*batch_size]
                             y_batch = y_train[t*batch_size:(t+1)*batch_size]
                         lb, rmse, ll = sess.run(
-                            [lower_bound, rmse, log_likelihood],
+                            [lower_bound, rms_error, log_likelihood],
                             feed_dict={n_samples: lb_samples,
                                     is_training: False,
                                     X: X_batch, y: y_batch})
@@ -236,7 +236,7 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
                             X_batch = X_test[t*batch_size:(t+1)*batch_size]
                             y_batch = y_test[t*batch_size:(t+1)*batch_size]
                         lb, rmse, ll = sess.run(
-                            [lower_bound, rmse, log_likelihood],
+                            [lower_bound, rms_error, log_likelihood],
                             feed_dict={n_samples: ll_samples,
                                     is_training: False,
                                     X: X_batch, y: y_batch})
@@ -262,11 +262,21 @@ def run_bnn_experiment(dataset_name, train_test_set, **args):
             # Load the selected best params and evaluate its performance
             saver = tf.train.Saver()
             saver.restore(sess, './trained/'+model_name+'_'+problem_name)
-            test_lb, test_rmse, test_ll = sess.run(
-                [lower_bound, rmse, log_likelihood],
-                feed_dict={n_samples: ll_samples,
-                        is_training: False,
-                        X: X_test, y: y_test})
+            for t in range(iters):
+                if(t == iters-1):                        
+                    X_batch = X_test[t*batch_size:]
+                    y_batch = y_test[t*batch_size:]
+                else:
+                    X_batch = X_test[t*batch_size:(t+1)*batch_size]
+                    y_batch = y_test[t*batch_size:(t+1)*batch_size]
+                lb, rmse, ll = sess.run(
+                    [lower_bound, rms_error, log_likelihood],
+                    feed_dict={n_samples: ll_samples,
+                            is_training: False,
+                            X: X_batch, y: y_batch})
+                lbs.append(lb);rmses.append(rmse);lls.append(ll)
+            test_lb, test_rmse, test_ll =\
+                np.mean(lbs), np.mean(rmses), np.mean(lls)
             print('>>> BEST TEST')
             print('>> Test lower bound = {}'.format(test_lb))
             print('>> Test rmse = {}'.format(test_rmse))
