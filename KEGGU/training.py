@@ -29,16 +29,17 @@ from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
 
+from expt_bnn import run_bnn_experiment
 from expt_vafnn import run_vafnn_experiment
 
 
-DATA_PATH = 'CASP.csv'
+DATA_PATH = 'Reaction Network (Undirected).data'
 
 def load_data(n_folds):
     import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=None)
+    data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
     data = data.as_matrix().astype(np.float32)
-    X, y = data[:, :-1], data[:, -1]
+    X, y = np.hstack((data[:, :-3], data[:, -2:])), data[:, -3]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
@@ -56,11 +57,23 @@ def load_data(n_folds):
     return train_test_set
 
 if __name__ == '__main__':
+
+    if('cpu' in sys.argv):
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
     training_settings = {
+        'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
-        'n_hiddens': [100],
-        'drop_rate': 0.3,
+        'n_hiddens': [50],
+        'drop_rate': 0.5,
+        'batch_size': 50,
         'learn_rate': 1e-3,
+        'max_epochs': 2000,
+        'early_stop': 10,
+        'check_freq': 10,
     }
-    run_vafnn_experiment('Protein', load_data(10), **training_settings)
+    
+    # Fair Model Comparison - Same Architecture & Optimization Rule
+    run_bnn_experiment('KEGGU', load_data(10), **training_settings)
+    run_vafnn_experiment('KEGGU', load_data(10), **training_settings)

@@ -57,6 +57,10 @@ def load_data(n_folds):
     return train_test_set
 
 if __name__ == '__main__':
+
+    if('cpu' in sys.argv):
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
     training_settings = {
         'plot_err': True,
         'lb_samples': 20,
