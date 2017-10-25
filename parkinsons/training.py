@@ -29,6 +29,7 @@ from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
 
+from expt_bnn import run_bnn_experiment
 from expt_vafnn import run_vafnn_experiment
 
 
@@ -57,10 +58,18 @@ def load_data(n_folds):
 
 if __name__ == '__main__':
     training_settings = {
+        'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
         'n_hiddens': [100],
-        'drop_rate': 0.3,
+        'drop_rate': 0.5,
+        'batch_size': 50,
         'learn_rate': 1e-3,
+        'max_epochs': 2000,
+        'early_stop': 10,
+        'check_freq': 10,
     }
+    
+    # Fair Model Comparison - Same Architecture & Optimization Rule
+    run_bnn_experiment('Parkinsons', load_data(10), **training_settings)
     run_vafnn_experiment('Parkinsons', load_data(10), **training_settings)
