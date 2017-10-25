@@ -111,9 +111,9 @@ if __name__ == '__main__':
     Log Result of VAFNN{13,50,1}
         1st Batch
             >>> BEST TEST
-            >> Test lower bound = -284.3058776855469
-            >> Test rmse = 2.41357421875
-            >> Test log_likelihood = -2.6123440265655518
+            >> Test lower bound = -310.2062072753906
+            >> Test rmse = 2.5632693767547607
+            >> Test log_likelihood = -2.6489861011505127
         2nd Batch
             >>> BEST TEST
             >> Test lower bound = -414.76837158203125
