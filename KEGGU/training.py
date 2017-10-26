@@ -38,7 +38,7 @@ DATA_PATH = 'Reaction Network (Undirected).data'
 def load_data(n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
-    data = data.as_matrix().astype(np.float32)
+    data = data.dropna(axis=0).as_matrix().astype(np.float32)
     X, y = np.hstack((data[:, :-3], data[:, -2:])), data[:, -3]
     y = y[:, None]
     n_data = y.shape[0]
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     training_settings = {
         'plot_err': True,
         'lb_samples': 20,
-        'll_samples': 100,
+        'll_samples': 50,
         'n_basis': 100,
         'n_hiddens': [200, 80, 20],
         'batch_size': 250,
