@@ -38,7 +38,7 @@ DATA_PATH = 'CASP.csv'
 def load_data(n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=None)
-    data = data.as_matrix().astype(np.float32)
+    data = data.dropna(axis=0).as_matrix().astype(np.float32)
     X, y = data[:, 1:], data[:, 0]
     y = y[:, None]
     n_data = y.shape[0]
