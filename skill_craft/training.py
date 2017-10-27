@@ -62,19 +62,22 @@ if __name__ == '__main__':
     
     model_names = ['VAFNN', 'BNN']
     
+    train_test_set = load_data(5)
+    D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
+    
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
-        'n_basis': 30,
-        'n_hiddens': [50, 50],
+        'n_basis': D*P*5,
+        'n_hiddens': [D*P*10],
         'batch_size': 50,
-        'learn_rate': 1e-3,
+        'learn_rate': 1e-2,
         'max_epochs': 2000,
         'early_stop': 5,
         'check_freq': 10,
     }
 
     eval_mses, eval_lls = run_experiment(
-        model_names, 'Boston Housing', load_data(5), **training_settings)
+        model_names, 'Boston Housing', train_test_set, **training_settings)
