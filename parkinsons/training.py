@@ -29,8 +29,7 @@ from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
 
-from expt_bnn import run_bnn_experiment
-from expt_vafnn import run_vafnn_experiment
+from expt import run_experiment
 
 
 DATA_PATH = 'parkinsons_updrs.data'
@@ -69,7 +68,7 @@ if __name__ == '__main__':
         'lb_samples': 20,
         'll_samples': 100,
         'n_basis': 30,
-        'n_hiddens': [50],
+        'n_hiddens': [80, 20],
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
