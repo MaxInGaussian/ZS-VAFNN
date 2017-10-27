@@ -38,7 +38,7 @@ def load_data(n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(
         path=DATA_PATH, header=None, index_col=None, sep="[ ^]+")
-    data = data.dropna(axis=0).as_matrix().astype(np.float32)
+    data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
     X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
     n_data = y.shape[0]
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         'learn_rate': 1e-3,
         'max_epochs': 2000,
         'early_stop': 3,
-        'check_freq': 10,
+        'check_freq': 5,
     }
 
     eval_mses, eval_lls = run_experiment(

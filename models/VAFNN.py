@@ -54,7 +54,7 @@ def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, is_training):
                     shape=[1, 1, net_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
                 V = tf.tile(V, [n_samples, tf.shape(X)[0], 1, 1])
-                expVf2 = tf.exp(-2*np.pi**2*tf.matmul(f**2, V))
+                expVf2 = tf.exp(-2*np.pi**2*tf.matmul(f**2, V**2))
                 w_mu = tf.zeros([1, net_sizes[i+1], n_basis])
                 w = 2*np.pi*zs.Normal('w'+str(i), w_mu, std=1.,
                             n_samples=n_samples, group_ndims=2)

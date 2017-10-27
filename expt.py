@@ -56,7 +56,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
     batch_size = 50 if 'batch_size' not in args.keys() else args['batch_size']
     max_epochs = 2000 if 'max_epochs' not in args.keys() else args['max_epochs']
     check_freq = 5 if 'check_freq' not in args.keys() else args['check_freq']
-    early_stop = 20 if 'early_stop' not in args.keys() else args['early_stop']
+    early_stop = 5 if 'early_stop' not in args.keys() else args['early_stop']
     lr = 1e-3 if 'lr' not in args.keys() else args['lr']
     
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -134,13 +134,12 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 print(i.name, i.get_shape())
         
             # Run the inference
-            lb_window, count_over_train = [], 0
+            best_epoch, best_lb, count_over_train = 0, -np.Infinity, 0
             fold_train_lbs, fold_train_mses, fold_train_lls = [], [], []
             fold_test_lbs, fold_test_mses, fold_test_lls = [], [], []
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
-                max_lb, best_lb = -np.Infinity, -np.Infinity
-                for epoch in range(1, max_epochs + 1):
+                for epoch in range(max_epochs):
                     time_epoch = -time.time()
                     lbs = []
                     for t in range(iters):
@@ -151,16 +150,13 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                             X_batch = X_train[t*batch_size:(t+1)*batch_size]
                             y_batch = y_train[t*batch_size:(t+1)*batch_size]
                         _, lb = sess.run(
-                            [infer_op, -cost],
+                            [infer_op, cost],
                             feed_dict={n_samples: lb_samples, is_training: True,
                                 lr_ph: lr, X: X_batch, y: y_batch})
                         lbs.append(lb)
                     time_epoch += time.time()
-                    print('Epoch {} ({:.1f}s, {}): Lower bound = {:.8f}'.format(
+                    print('Epoch {} ({:.1f}s, {}): Cost = {:.8f}'.format(
                         epoch, time_epoch, count_over_train, np.mean(lbs)))
-                    if(len(lb_window)>=early_stop):
-                        del lb_window[0]
-                    lb_window.append(np.mean(lbs))
                     if epoch % check_freq == 0:
                         lbs, mses, lls = [], [], []
                         time_train = -time.time()
@@ -178,10 +174,6 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                             lbs.append(lb);mses.append(mse);lls.append(ll)
                         train_lb, train_mse, train_ll =\
                             np.mean(lbs), np.mean(mses), np.mean(lls)
-                        if(max_lb < train_lb):
-                            max_lb = train_lb
-                        if(max_lb > np.max(lb_window)+2*np.std(lb_window)):
-                            count_over_train += 1
                         time_train += time.time()
                         if(len(fold_train_lbs)==0):
                             fold_train_lbs.append(train_lb)
@@ -225,7 +217,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         print('>> Test lower bound = {:.8f}'.format(test_lb))
                         print('>> Test rmse = {:.8f}'.format(np.sqrt(test_mse)))
                         print('>> Test log_likelihood = {:.8f}'.format(test_ll))
-                        if(best_lb<train_lb):
+                        if(best_lb < train_lb):
+                            best_epoch = len(fold_train_lbs)
                             count_over_train = 0
                             best_lb = train_lb
                             if(save):
@@ -272,19 +265,20 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 plt.figure()
                 plt.subplot(2, 1, 1)        
                 plt.title(model_code+" on "+dataset_name)
-                test_max_epochs = (np.arange(len(fold_train_mses))+1)*check_freq
+                test_max_epochs = (np.arange(best_epoch)+1)*check_freq
                 plt.semilogx(test_max_epochs,
-                    np.sqrt(fold_train_mses), '--', label='Train')
+                    np.sqrt(fold_train_mses[:best_epoch]), '--', label='Train')
                 plt.semilogx(test_max_epochs,
-                    np.sqrt(fold_test_mses), label='Test')
+                    np.sqrt(fold_test_mses[:best_epoch]), label='Test')
                 plt.legend(loc='lower left')
                 plt.xlabel('Epoch')
                 plt.ylabel('RMSE {:.4f}'.format(np.sqrt(test_mse)))
                 
                 plt.subplot(2, 1, 2)
-                test_max_epochs = (np.arange(len(fold_train_lls))+1)*check_freq
-                plt.semilogx(test_max_epochs, fold_train_lls, '--', label='Train')
-                plt.semilogx(test_max_epochs, fold_test_lls, label='Test')
+                plt.semilogx(test_max_epochs,
+                    fold_train_lls[:best_epoch], '--', label='Train')
+                plt.semilogx(test_max_epochs,
+                    fold_test_lls[:best_epoch], label='Test')
                 plt.xlabel('Epoch')
                 plt.ylabel('Log Likelihood {:.4f}'.format(test_ll))
                 if not os.path.exists('./plots/'):
@@ -297,10 +291,4 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             test_lbs.append(np.array(fold_test_lbs))
             test_mses.append(np.array(fold_test_mses))
             test_lls.append(np.array(fold_test_lls))
-        print('>>> OVERALL TEST')
-        print('>> Overall Test rmse = {:.8f} +/- {:.8f}'.format(
-            np.sqrt(np.mean(eval_mses[model_name])),
-            1.96*np.std(np.sqrt(eval_mses[model_name]))))
-        print('>> Overall Test log_likelihood = {:.8f} +/- {:.8f}'.format(
-            np.mean(eval_lls[model_name]), 1.96*np.std(eval_lls[model_name])))
     return eval_mses, eval_lls

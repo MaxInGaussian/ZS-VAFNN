@@ -60,20 +60,22 @@ if __name__ == '__main__':
 
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
+    
+    model_names = ['VAFNN', 'BNN']
+    
+    # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
-        'n_basis': 100,
-        'n_hiddens': [80, 20],
-        'batch_size': 50,
+        'n_basis': 30,
+        'n_hiddens': [50],
+        'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
-        'early_stop': 10,
-        'check_freq': 10,
+        'early_stop': 3,
+        'check_freq': 5,
     }
-    
-    # Fair Model Comparison - Same Architecture & Optimization Rule
-    run_bnn_experiment('Parkinsons', load_data(5), **training_settings)
-    run_vafnn_experiment('Parkinsons', load_data(5), **training_settings)
+
+    eval_mses, eval_lls = run_experiment(
+        model_names, 'Boston Housing', load_data(5), **training_settings)
