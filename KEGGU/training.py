@@ -50,8 +50,8 @@ def load_data(n_folds):
         else:
             test_inds = np.arange(n_data)[fold*n_partition:(fold+1)*n_partition]
         train_inds = np.setdiff1d(range(n_data), test_inds)
-        X_train, y_train = X[train_inds].copy(), y[train_inds].ravel()
-        X_test, y_test = X[test_inds].copy(), y[test_inds].ravel()
+        X_train, y_train = X[train_inds], y[train_inds]
+        X_test, y_test = X[test_inds], y[test_inds]
         train_test_set.append([X_train, y_train, X_test, y_test])
     return train_test_set
 
