@@ -29,8 +29,7 @@ from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
 
-from expt_bnn import run_bnn_experiment
-from expt_vafnn import run_vafnn_experiment
+from expt import run_experiment
 
 
 DATA_PATH = 'housing.data'
@@ -39,7 +38,7 @@ def load_data(n_folds):
     import pandas as pd
     data = pd.DataFrame.from_csv(
         path=DATA_PATH, header=None, index_col=None, sep="[ ^]+")
-    data = data.as_matrix().astype(np.float32)
+    data = data.dropna(axis=0).as_matrix().astype(np.float32)
     X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
     n_data = y.shape[0]
@@ -52,8 +51,8 @@ def load_data(n_folds):
         else:
             test_inds = np.arange(n_data)[fold*n_partition:(fold+1)*n_partition]
         train_inds = np.setdiff1d(range(n_data), test_inds)
-        X_train, y_train = X[train_inds].copy(), y[train_inds].ravel()
-        X_test, y_test = X[test_inds].copy(), y[test_inds].ravel()
+        X_train, y_train = X[train_inds], y[train_inds]
+        X_test, y_test = X[test_inds], y[test_inds]
         train_test_set.append([X_train, y_train, X_test, y_test])
     return train_test_set
 
@@ -62,60 +61,21 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
+    model_names = ['VAFNN', 'BNN']
+    
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'plot_err': True,
         'lb_samples': 20,
         'll_samples': 100,
-        'n_basis': 100,
+        'n_basis': 30,
         'n_hiddens': [50],
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
-        'early_stop': 10,
+        'early_stop': 3,
         'check_freq': 10,
     }
-    
 
-    """
-    Log Result of BNN{13,50,1}
-        1st Batch
-            >> Test rmse = 2.69391036
-            >> Test log_likelihood = -2.60765600
-        2nd Batch
-            >> Test rmse = 4.03287745
-            >> Test log_likelihood = -2.75631952
-        3rd Batch
-            >> Test rmse = 3.64916301
-            >> Test log_likelihood = -2.76281524
-        4th Batch
-            >> Test rmse = 7.72074556
-            >> Test log_likelihood = -3.22146368
-        5th Batch
-            >> Test rmse = 3.51188064
-            >> Test log_likelihood = -2.78703928
-        Overall
-            >> Test rmse = 4.66435121
-            >> Test log_likelihood = -2.82705879
-    """
-    run_bnn_experiment('Boston Housing', load_data(5), **training_settings)
-    
-    """
-    Log Result of VAFNN{13,50,1}
-        1st Batch
-            >> Test rmse = 2.5582997798919678
-            >> Test log_likelihood = -2.48785662651062
-        2nd Batch
-            >> Test rmse = 4.686698913574219
-            >> Test log_likelihood = -2.836054563522339
-        3rd Batch
-            >> Test rmse = 4.089158535003662
-            >> Test log_likelihood = -2.745171070098877
-        4th Batch
-            >> Test rmse = 7.8750457763671875
-            >> Test log_likelihood = -3.321596145629883
-        5th Batch
-            >> Test rmse = 3.3094685077667236
-            >> Test log_likelihood = -2.7854971885681152
-    """
-    run_vafnn_experiment('Boston Housing', load_data(5), **training_settings)
+    eval_mses, eval_lls = run_experiment(
+        model_names, 'Boston Housing', load_data(5), **training_settings)
