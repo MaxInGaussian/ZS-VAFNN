@@ -50,19 +50,18 @@ def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, is_training):
                     initializer=tf.constant_initializer(0.))
                 b = tf.tile(b, [n_samples, tf.shape(X)[0], 1, 1])
                 f = (tf.matmul(f, A)+b)/tf.sqrt(net_sizes[i]*1.)
-                V = tf.get_variable('V'+str(i),
+                V = tf.get_variable('w_logstd_'+str(i),
                     shape=[1, 1, net_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
                 V = tf.tile(V, [n_samples, tf.shape(X)[0], 1, 1])
-                expVf2 = tf.exp(-2*np.pi**2*tf.matmul(f**2, V**2))
+                expVf2 = tf.exp(-2*np.pi**2*tf.matmul(f**2, V))
                 w_mu = tf.zeros([1, net_sizes[i+1], n_basis])
                 w = 2*np.pi*zs.Normal('w'+str(i), w_mu, std=1.,
                             n_samples=n_samples, group_ndims=2)
                 w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
                 f = tf.matmul(f, w)/tf.sqrt(net_sizes[i+1]*1.)
                 f = tf.concat([expVf2*tf.cos(f), expVf2*tf.sin(f)], 3)
-                M, V = tf.reduce_mean(w, 0), tf.reduce_mean(V, 0)
-                KL_V += tf.reduce_mean(V**2-tf.log(V**2+1e-8))
+                KL_V += tf.reduce_mean(w**2+tf.abs(V)-tf.log(tf.abs(V)+1e-8))
                 continue
             w_mu = tf.zeros([1, n_basis*2, net_sizes[i+1]])
             w = zs.Normal('w'+str(i), w_mu, std=1.,

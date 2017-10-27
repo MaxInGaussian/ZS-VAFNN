@@ -70,11 +70,11 @@ if __name__ == '__main__':
         'll_samples': 100,
         'n_basis': 30,
         'n_hiddens': [50],
-        'batch_size': 10,
+        'batch_size': 50,
         'learn_rate': 1e-3,
         'max_epochs': 2000,
-        'early_stop': 3,
-        'check_freq': 5,
+        'early_stop': 5,
+        'check_freq': 10,
     }
 
     eval_mses, eval_lls = run_experiment(
