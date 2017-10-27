@@ -68,11 +68,11 @@ if __name__ == '__main__':
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'plot_err': True,
-        'lb_samples': 20,
+        'lb_samples': 10,
         'll_samples': 100,
         'n_basis': D*P*5,
         'n_hiddens': [D*P*10],
-        'batch_size': 200,
+        'batch_size': 150,
         'learn_rate': 1e-2,
         'max_epochs': 2000,
         'early_stop': 5,
