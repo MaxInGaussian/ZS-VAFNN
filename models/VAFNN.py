@@ -27,7 +27,7 @@ def get_w_names(net_sizes):
     return ['w'+str(i) for i in range(len(net_sizes)-1)]
 
 @zs.reuse('model')
-def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, is_training):
+def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, task, is_training):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
         KL_V = 0
@@ -70,11 +70,14 @@ def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, is_training):
             w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
             f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 3)
             f = tf.matmul(f, w)/tf.sqrt(net_sizes[i]*1.)
-        y_mean = tf.squeeze(f, [3])
-        y_logstd = tf.get_variable('y_logstd', shape=[],
-                                   initializer=tf.constant_initializer(0.))
-        y = zs.Normal('y', y_mean, logstd=y_logstd, group_ndims=1)
-    return model, y_mean, KL_V
+        f = tf.squeeze(f, [3])
+        if(task == "regression")
+            y_logstd = tf.get_variable('y_logstd', shape=[],
+                                    initializer=tf.constant_initializer(0.))
+            y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
+        elif(task == "classification"):
+            y = zs.OnehotCategorical('y', f)
+    return model, f, KL_V
 
 @zs.reuse('variational')
 def var_q_w(n_basis, net_sizes, n_samples):

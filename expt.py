@@ -41,6 +41,9 @@ def standardize(data_train, data_test):
 
 def run_experiment(model_names, dataset_name, train_test_set, **args):
     
+    # Define task
+    task = 'regression' if 'task' not in args.keys() else args['task']
+    
     # Define model parameters
     n_basis = [50] if 'n_basis' not in args.keys() else args['n_basis']
     n_hiddens = [50] if 'n_hiddens' not in args.keys() else args['n_hiddens']
@@ -59,11 +62,11 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
     net_sizes = [D]+n_hiddens+[P]
     
-    min_mse, max_nll = np.Infinity, -np.Infinity
-    eval_mses = {model_name:[] for model_name in model_names}
+    min_tm, max_nll = np.Infinity, -np.Infinity
+    eval_tms = {model_name:[] for model_name in model_names}
     eval_lls = {model_name:[] for model_name in model_names}
-    train_lbs, train_mses, train_lls = [], [], []
-    test_lbs, test_mses, test_lls = [], [], []
+    train_lbs, train_tms, train_lls = [], [], []
+    test_lbs, test_tms, test_lls = [], [], []
     for fold, (X_train, y_train, X_test, y_test) in enumerate(train_test_set):
     
         problem_name = dataset_name.replace(' ', '_')+'_'+str(fold+1)
@@ -80,7 +83,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
         n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
         is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
         X = tf.placeholder(tf.float32, shape=[None, D])
-        y = tf.placeholder(tf.float32, shape=[None, 1])
+        y = tf.placeholder(tf.float32, shape=[None, P])
         y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
     
         for model_name in model_names:
@@ -90,8 +93,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
             
             def log_joint(observed):
-                model, _, _ = module.p_Y_Xw(
-                    observed, X, n_basis, net_sizes, n_samples, is_training)
+                model, _, _ = module.p_Y_Xw(observed, X, n_basis,
+                    net_sizes, n_samples, task, is_training)
                 log_pws = model.local_log_prob(w_names)
                 log_py_xw = model.local_log_prob('y')
                 return tf.add_n(log_pws) + zs.log_mean_exp(log_py_xw, 0) * N
@@ -109,10 +112,18 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             # prediction: rms error & log likelihood
             observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
             observed.update({'y': y_obs})
-            model, ys, reg_cost = module.p_Y_Xw(
-                observed, X, n_basis, net_sizes, n_samples, is_training)
+            model, ys, reg_cost = module.p_Y_Xw(observed, X, n_basis,
+                    net_sizes, n_samples, task, is_training)
             y_pred = tf.reduce_mean(ys, 0)
-            sqr_error = tf.reduce_mean(((y_pred - y)*std_y_train) ** 2)
+            if(task == "regression"):
+                sqr_error = tf.reduce_mean(((y_pred - y)*std_y_train) ** 2)
+                task_measure = sqr_error
+            elif(task == "classification"):
+                y_pred = tf.argmax(y_pred, 1)
+                sparse_y = tf.argmax(y, 1)
+                accuracy = tf.reduce_mean(tf.cast(
+                    tf.equal(y_pred, sparse_y), tf.float32))
+                task_measure = accuracy
             log_py_xw = model.local_log_prob('y')
             log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))-\
                 tf.log(std_y_train)
@@ -132,8 +143,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
         
             # Run the inference
             best_epoch, best_lb, count_over_train = 0, -np.Infinity, 0
-            fold_train_lbs, fold_train_mses, fold_train_lls = [], [], []
-            fold_test_lbs, fold_test_mses, fold_test_lls = [], [], []
+            fold_train_lbs, fold_train_tms, fold_train_lls = [], [], []
+            fold_test_lbs, fold_test_tms, fold_test_lls = [], [], []
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
                 for epoch in range(max_epochs):
@@ -155,7 +166,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     print('Epoch {} ({:.1f}s, {}): Cost = {:.8f}'.format(
                         epoch, time_epoch, count_over_train, np.mean(lbs)))
                     if epoch % check_freq == 0:
-                        lbs, mses, lls = [], [], []
+                        lbs, tms, lls = [], [], []
                         time_train = -time.time()
                         for t in range(iters):
                             if(t == iters-1):                        
@@ -164,28 +175,31 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                             else:
                                 X_batch = X_train[t*batch_size:(t+1)*batch_size]
                                 y_batch = y_train[t*batch_size:(t+1)*batch_size]
-                            lb, mse, ll = sess.run(
-                                [lower_bound, sqr_error, log_likelihood],
+                            lb, tm, ll = sess.run(
+                                [lower_bound, task_measure, log_likelihood],
                             feed_dict={n_samples: ll_samples, is_training: False,
                                 X: X_batch, y: y_batch})
-                            lbs.append(lb);mses.append(mse);lls.append(ll)
-                        train_lb, train_mse, train_ll =\
-                            np.mean(lbs), np.mean(mses), np.mean(lls)
+                            lbs.append(lb);tms.append(tm);lls.append(ll)
+                        train_lb, train_tm, train_ll =\
+                            np.mean(lbs), np.mean(tms), np.mean(lls)
                         time_train += time.time()
                         if(len(fold_train_lbs)==0):
                             fold_train_lbs.append(train_lb)
-                            fold_train_mses.append(train_mse)
+                            fold_train_tms.append(train_tm)
                             fold_train_lls.append(train_ll)
                         else:
                             fold_train_lbs.append(train_lb)
-                            fold_train_mses.append(train_mse)
+                            fold_train_tms.append(train_tm)
                             fold_train_lls.append(train_ll)
                         print('>>> TRAIN ({:.1f}s) - best_lb = {:.8f}'.format(
                             time_train, best_lb))
                         print('>> Train lower bound = {:.8f}'.format(train_lb))
-                        print('>> Train rmse = {:.8f}'.format(np.sqrt(train_mse)))
                         print('>> Train log_likelihood = {:.8f}'.format(train_ll))
-                        lbs, mses, lls = [], [], []
+                        if(task == "regression"):
+                            print('>> Train rmse = {:.8f}'.format(np.sqrt(train_tm)))
+                        elif(task == "classification"):
+                            print('>> Train acc = {:.8f}'.format(train_tm))
+                        lbs, tms, lls = [], [], []
                         time_test = -time.time()
                         for t in range(t_iters):
                             if(t == t_iters-1):                   
@@ -195,25 +209,28 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                                 X_batch = X_test[t*batch_size:(t+1)*batch_size]
                                 y_batch = y_test[t*batch_size:(t+1)*batch_size]
                             lb, mse, ll = sess.run(
-                                [lower_bound, sqr_error, log_likelihood],
+                                [lower_bound, task_measure, log_likelihood],
                             feed_dict={n_samples: ll_samples, is_training: False,
                                 X: X_batch, y: y_batch})
-                            lbs.append(lb);mses.append(mse);lls.append(ll)
-                        test_lb, test_mse, test_ll =\
-                            np.mean(lbs), np.mean(mses), np.mean(lls)
+                            lbs.append(lb);tms.append(mse);lls.append(ll)
+                        test_lb, test_tm, test_ll =\
+                            np.mean(lbs), np.mean(tms), np.mean(lls)
                         time_test += time.time()
                         if(len(fold_test_lbs)==0):
                             fold_test_lbs.append(test_lb)
-                            fold_test_mses.append(test_mse)
+                            fold_test_tms.append(test_tm)
                             fold_test_lls.append(test_ll)
                         else:
                             fold_test_lbs.append(test_lb)
-                            fold_test_mses.append(test_mse)
+                            fold_test_tms.append(test_tm)
                             fold_test_lls.append(test_ll)
                         print('>>> TEST ({:.1f}s)'.format(time_test))
                         print('>> Test lower bound = {:.8f}'.format(test_lb))
-                        print('>> Test rmse = {:.8f}'.format(np.sqrt(test_mse)))
                         print('>> Test log_likelihood = {:.8f}'.format(test_ll))
+                        if(task == "regression"):
+                            print('>> Test rmse = {:.8f}'.format(np.sqrt(test_tm)))
+                        elif(task == "classification"):
+                            print('>> Test acc = {:.8f}'.format(test_tm))
                         if(best_lb < train_lb):
                             best_epoch = len(fold_train_lbs)
                             count_over_train = 0
@@ -225,7 +242,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                                 saver.save(sess,
                                     './trained/'+model_code+'_'+problem_name)
                             else:
-                                min_mse, max_ll = test_mse, test_ll
+                                min_tm, max_ll = test_tm, test_ll
                         else:
                             count_over_train += 1
                         if(count_over_train > early_stop):
@@ -235,7 +252,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 if(save):
                     saver = tf.train.Saver()
                     saver.restore(sess, './trained/'+model_code+'_'+problem_name)
-                    mses, lls = [], []
+                    tms, lls = [], []
                     t_iters = int(np.floor(X_test.shape[0]/float(batch_size)))
                     for t in range(t_iters):
                         if(t == t_iters-1):                   
@@ -248,14 +265,17 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                             [sqr_error, log_likelihood],
                             feed_dict={n_samples: ll_samples, is_training: False,
                                 X: X_batch, y: y_batch})
-                        mses.append(mse);lls.append(ll)
-                    test_mse, test_ll = np.mean(mses), np.mean(lls)
+                        tms.append(mse);lls.append(ll)
+                    test_tm, test_ll = np.mean(tms), np.mean(lls)
                 else:
-                    test_mse, test_ll = min_mse, max_ll
+                    test_tm, test_ll = min_tm, max_ll
                 print('>>> BEST TEST')
-                print('>> Test rmse = {:.8f}'.format(np.sqrt(test_mse)))
                 print('>> Test log_likelihood = {:.8f}'.format(test_ll))
-                eval_mses[model_name].append(test_mse)
+                if(task == "regression"):
+                    print('>> Test rmse = {:.8f}'.format(np.sqrt(test_tm)))
+                elif(task == "classification"):
+                    print('>> Test acc = {:.8f}'.format(test_tm))
+                eval_tms[model_name].append(test_tm)
                 eval_lls[model_name].append(test_ll)
             if(plot_err):
                 import matplotlib.pyplot as plt
@@ -274,13 +294,17 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 
                 plt.subplot(3, 1, 2)
                 plt.semilogx(test_max_epochs,
-                    np.sqrt(fold_train_mses[:best_epoch]), '--', label='Train')
+                    np.sqrt(fold_train_tms[:best_epoch]), '--', label='Train')
                 plt.semilogx(test_max_epochs,
-                    np.sqrt(fold_test_mses[:best_epoch]), label='Test')
+                    np.sqrt(fold_test_tms[:best_epoch]), label='Test')
                 plt.legend(loc='lower left')
                 plt.xlabel('Epoch')
-                plt.ylabel('RMSE {:.4f}'.format(np.sqrt(test_mse)))
-                
+                if(task == "regression"):
+                    plt.ylabel('RMSE {:.4f}'.format(np.sqrt(test_tm)))
+                elif(task == "classification"):
+                    plt.ylabel('Accuracy {:.4f}'.format(np.sqrt(test_tm)))
+                    plt.ylim([0, 1])
+                    
                 plt.subplot(3, 1, 3)
                 plt.semilogx(test_max_epochs,
                     fold_train_lls[:best_epoch], '--', label='Train')
@@ -293,9 +317,9 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 plt.savefig('./plots/'+model_code+'_'+problem_name+'.png')
                 plt.close()
             train_lbs.append(np.array(fold_train_lbs))
-            train_mses.append(np.array(fold_train_mses))
+            train_tms.append(np.array(fold_train_tms))
             train_lls.append(np.array(fold_train_lls))
             test_lbs.append(np.array(fold_test_lbs))
-            test_mses.append(np.array(fold_test_mses))
+            test_tms.append(np.array(fold_test_tms))
             test_lls.append(np.array(fold_test_lls))
-    return eval_mses, eval_lls
+    return eval_tms, eval_lls
