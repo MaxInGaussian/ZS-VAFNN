@@ -75,7 +75,7 @@ if __name__ == '__main__':
         'll_samples': 100,
         'n_basis': 50,
         'n_hiddens': [100],
-        'batch_size': 10,
+        'batch_size': 100,
         'learn_rate': 1e-3,
         'max_epochs': 10000,
         'early_stop': 10,
