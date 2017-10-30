@@ -1,2 +1,0 @@
-model_checkpoint_path: "VAFNN{13,50,1}_Boston_Housing_1"
-all_model_checkpoint_paths: "VAFNN{13,50,1}_Boston_Housing_1"

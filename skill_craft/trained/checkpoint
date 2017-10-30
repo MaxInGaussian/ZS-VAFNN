@@ -1,2 +1,0 @@
-model_checkpoint_path: "VAFNN{18,60,30,6,1}_Skill_Craft_2"
-all_model_checkpoint_paths: "VAFNN{18,60,30,6,1}_Skill_Craft_2"
