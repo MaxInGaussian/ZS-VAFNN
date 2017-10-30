@@ -43,7 +43,7 @@ def load_data(n_folds):
         ret = np.zeros((x.shape[0], depth))
         ret[np.arange(x.shape[0]), x] = 1
         return ret
-    f = gzip.open(path, 'rb')
+    f = gzip.open(DATA_PATH, 'rb')
     if six.PY2:
         train_set, valid_set, test_set = pickle.load(f)
     else:
