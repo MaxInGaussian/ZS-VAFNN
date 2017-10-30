@@ -53,7 +53,7 @@ def load_data(n_folds):
     X_valid, y_valid = valid_set[0], valid_set[1]
     X_test, y_test = test_set[0], test_set[1]
     X_train = np.vstack([X_train, X_valid]).astype('float32')
-    y_train = np.vstack([y_train, y_valid])
+    y_train = np.concatenate([y_train, y_valid])
     return [X_train, to_one_hot(y_train, 10), X_test, to_one_hot(y_test, 10)]
 
 
