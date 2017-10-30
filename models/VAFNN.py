@@ -29,8 +29,6 @@ def get_w_names(net_sizes):
 @zs.reuse('model')
 def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, is_training):
     with zs.BayesianNet(observed=observed) as model:
-        normalizer_params = {'is_training': is_training,
-                             'updates_collections': None}
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
         KL_V = 0
         for i in range(len(net_sizes)-1):
