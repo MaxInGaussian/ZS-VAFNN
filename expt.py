@@ -76,14 +76,19 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
     
         # Standardize data
         X_train, X_test, _, _ = standardize(X_train, X_test)
-        y_train, y_test, mean_y_train, std_y_train = standardize(y_train, y_test)
+        if(task == "regression"):
+            y_train, y_test, mean_y_train, std_y_train =\
+                standardize(y_train, y_test)
     
     
         # Build the computation graph
         n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
         is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
         X = tf.placeholder(tf.float32, shape=[None, D])
-        y = tf.placeholder(tf.float32, shape=[None, P])
+        if(task == "regression"):
+            y = tf.placeholder(tf.float32, shape=[None, P])
+        elif(task == "classification"):
+            y = tf.placeholder(tf.int32, shape=[None, P])
         y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
     
         for model_name in model_names:
@@ -125,8 +130,11 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     tf.equal(y_pred, sparse_y), tf.float32))
                 task_measure = accuracy
             log_py_xw = model.local_log_prob('y')
-            log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))-\
-                tf.log(std_y_train)
+            if(task == "regression"):
+                log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))-\
+                    tf.log(std_y_train)
+            elif(task == "classification"):
+                log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))
             if(reg_cost is not None):
                 cost += reg_cost
             
