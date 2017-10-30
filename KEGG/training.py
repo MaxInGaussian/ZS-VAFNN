@@ -69,7 +69,7 @@ if __name__ == '__main__':
     training_settings = {
         'plot_err': True,
         'lb_samples': 10,
-        'll_samples': 100,
+        'll_samples': 50,
         'n_basis': D*P*5,
         'n_hiddens': [D*P*10],
         'batch_size': 100,
