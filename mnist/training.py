@@ -39,10 +39,10 @@ from expt import run_experiment
 DATA_PATH = 'mnist.pkl.gz'
 
 def load_data(n_folds):
-    def to_one_hot(x, depth):
-        ret = np.zeros((x.shape[0], depth))
-        ret[np.arange(x.shape[0]), x] = 1
-        return ret
+    def to_one_hot(y, n_class):
+        y_onehot = np.zeros((y.shape[0], n_class))
+        y_onehot[np.arange(y.shape[0]), y] = 1
+        return y_onehot
     f = gzip.open(DATA_PATH, 'rb')
     if six.PY2:
         train_set, valid_set, test_set = pickle.load(f)
@@ -54,7 +54,7 @@ def load_data(n_folds):
     X_test, y_test = test_set[0], test_set[1]
     X_train = np.vstack([X_train, X_valid]).astype('float32')
     y_train = np.concatenate([y_train, y_valid])
-    return [X_train, to_one_hot(y_train, 10), X_test, to_one_hot(y_test, 10)]
+    return [[X_train, to_one_hot(y_train, 10), X_test, to_one_hot(y_test, 10)]]
 
 
 if __name__ == '__main__':
