@@ -41,9 +41,6 @@ def standardize(data_train, data_test):
 
 def run_experiment(model_names, dataset_name, train_test_set, **args):
     
-    tf.set_random_seed(1237)
-    np.random.seed(1234)
-    
     # Define model parameters
     n_basis = [50] if 'n_basis' not in args.keys() else args['n_basis']
     n_hiddens = [50] if 'n_hiddens' not in args.keys() else args['n_hiddens']
@@ -263,9 +260,19 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             if(plot_err):
                 import matplotlib.pyplot as plt
                 plt.figure()
-                plt.subplot(2, 1, 1)        
+                plt.subplot(3, 1, 1)        
                 plt.title(model_code+" on "+dataset_name)
+                
+
                 test_max_epochs = (np.arange(best_epoch)+1)*check_freq
+                plt.semilogx(test_max_epochs,
+                    fold_train_lbs[:best_epoch], '--', label='Train')
+                plt.semilogx(test_max_epochs,
+                    fold_test_lbs[:best_epoch], label='Test')
+                plt.xlabel('Epoch')
+                plt.ylabel('ELBO {:.4f}'.format(test_lb))
+                
+                plt.subplot(3, 1, 2)
                 plt.semilogx(test_max_epochs,
                     np.sqrt(fold_train_mses[:best_epoch]), '--', label='Train')
                 plt.semilogx(test_max_epochs,
@@ -274,7 +281,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 plt.xlabel('Epoch')
                 plt.ylabel('RMSE {:.4f}'.format(np.sqrt(test_mse)))
                 
-                plt.subplot(2, 1, 2)
+                plt.subplot(3, 1, 3)
                 plt.semilogx(test_max_epochs,
                     fold_train_lls[:best_epoch], '--', label='Train')
                 plt.semilogx(test_max_epochs,

@@ -42,31 +42,35 @@ def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, is_training):
                     A = tf.tile(A, [n_samples, tf.shape(X)[0], 1, 1])
                 else:
                     A = tf.get_variable('A'+str(i),
-                        shape=[1, 1, n_basis*2, net_sizes[i+1]],
+                        shape=[1, 1, n_basis, net_sizes[i+1]],
                         initializer=tf.constant_initializer(0.))
-                    A = tf.tile(A, [n_samples, tf.shape(X)[0], 1, 1])
+                    A = tf.tile(A, [n_samples, tf.shape(X)[0], 2, 1])
                 b = tf.get_variable('b'+str(i),
                     shape=[1, 1, 1, net_sizes[i+1]],
                     initializer=tf.constant_initializer(0.))
                 b = tf.tile(b, [n_samples, tf.shape(X)[0], 1, 1])
                 f = (tf.matmul(f, A)+b)/tf.sqrt(net_sizes[i]*1.)
-                V = tf.get_variable('w_logstd_'+str(i),
+                f = layers.dropout(f, 0.5, is_training=True)
+                V = tf.get_variable('w_var'+str(i),
                     shape=[1, 1, net_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
-                V = tf.tile(V, [n_samples, tf.shape(X)[0], 1, 1])/net_sizes[i+1]/n_basis
+                V = tf.tile(tf.abs(V), [n_samples, tf.shape(X)[0], 1, 1])
                 expVf2 = tf.exp(-2*np.pi**2*tf.matmul(f**2, V))
-                w_mu = tf.zeros([1, net_sizes[i+1], n_basis])
-                w = 2*np.pi*zs.Normal('w'+str(i), w_mu, std=1.,
+                M = tf.get_variable('w_mean'+str(i),
+                    shape=[1, net_sizes[i+1], n_basis],
+                    initializer=tf.constant_initializer(0.))
+                w = 2*np.pi*zs.Normal('w'+str(i), M, std=1.,
                             n_samples=n_samples, group_ndims=2)
                 w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
                 f = tf.matmul(f, w)/tf.sqrt(net_sizes[i+1]*1.)
                 f = tf.concat([expVf2*tf.cos(f), expVf2*tf.sin(f)], 3)
-                KL_V += tf.reduce_mean(w**2+tf.abs(V)-tf.log(tf.abs(V)+1e-8))
+                KL_V += tf.reduce_mean(M**2+V-tf.log(V+1e-8))
                 continue
-            w_mu = tf.zeros([1, n_basis*2, net_sizes[i+1]])
+            w_mu = tf.zeros([1, n_basis*2+1, net_sizes[i+1]])
             w = zs.Normal('w'+str(i), w_mu, std=1.,
                         n_samples=n_samples, group_ndims=2)
             w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
+            f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 3)
             f = tf.matmul(f, w)/tf.sqrt(net_sizes[i]*1.)
         y_mean = tf.squeeze(f, [3])
         y_logstd = tf.get_variable('y_logstd', shape=[],
@@ -79,21 +83,21 @@ def var_q_w(n_basis, net_sizes, n_samples):
     with zs.BayesianNet() as variational:
         for i in range(len(net_sizes)-1):
             if(i < len(net_sizes)-2):
-                w_mean = tf.get_variable('w_mean_'+str(i),
+                w_mean = tf.get_variable('w_mean'+str(i),
                     shape=[1, net_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
-                w_logstd = tf.get_variable('w_logstd_'+str(i),
+                w_logstd = tf.get_variable('w_logstd'+str(i),
                     shape=[1, net_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
                 w = zs.Normal('w'+str(i), w_mean, logstd=w_logstd,
                         n_samples=n_samples, group_ndims=2)
                 pass
             else:
-                w_mean = tf.get_variable('w_mean_'+str(i),
-                    shape=[1, n_basis*2, net_sizes[i+1]],
+                w_mean = tf.get_variable('w_mean'+str(i),
+                    shape=[1, n_basis*2+1, net_sizes[i+1]],
                     initializer=tf.constant_initializer(0.))
-                w_logstd = tf.get_variable('w_logstd_'+str(i),
-                    shape=[1, n_basis*2, net_sizes[i+1]],
+                w_logstd = tf.get_variable('w_logstd'+str(i),
+                    shape=[1, n_basis*2+1, net_sizes[i+1]],
                     initializer=tf.constant_initializer(0.))
                 w = zs.Normal('w'+str(i), w_mean, logstd=w_logstd,
                         n_samples=n_samples, group_ndims=2)
