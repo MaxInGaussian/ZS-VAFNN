@@ -30,6 +30,7 @@ import numpy as np
 import zhusuan as zs
 
 import six
+import gzip
 from six.moves import cPickle as pickle
 
 from expt import run_experiment
