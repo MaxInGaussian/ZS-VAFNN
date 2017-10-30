@@ -70,7 +70,7 @@ def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, task, is_training):
             w = tf.tile(w, [1, tf.shape(X)[0], 1, 1])
             f = tf.concat([f, tf.ones([n_samples, tf.shape(X)[0], 1, 1])], 3)
             f = tf.matmul(f, w)/tf.sqrt(net_sizes[i]*1.)
-        f = tf.squeeze(f, [3])
+        f = tf.squeeze(f, [2])
         if(task == "regression"):
             y_logstd = tf.get_variable('y_logstd', shape=[],
                                     initializer=tf.constant_initializer(0.))
