@@ -266,11 +266,11 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
 
                 test_max_epochs = (np.arange(best_epoch)+1)*check_freq
                 plt.semilogx(test_max_epochs,
-                    np.sqrt(fold_train_lbs[:best_epoch]), '--', label='Train')
+                    fold_train_lbs[:best_epoch], '--', label='Train')
                 plt.semilogx(test_max_epochs,
-                    np.sqrt(fold_test_lbs[:best_epoch]), label='Test')
+                    fold_test_lbs[:best_epoch], label='Test')
                 plt.xlabel('Epoch')
-                plt.ylabel('ELBO {:.4f}'.format(np.sqrt(test_lb)))
+                plt.ylabel('ELBO {:.4f}'.format(test_lb))
                 
                 plt.subplot(3, 1, 2)
                 plt.semilogx(test_max_epochs,
