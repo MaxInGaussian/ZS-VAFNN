@@ -39,7 +39,7 @@ def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, task, is_training):
             if(i < len(net_sizes)-2):
                 f = tf.nn.relu(f)
         f = tf.squeeze(f, [3])
-        if(task == "regression")
+        if(task == "regression"):
             y_logstd = tf.get_variable('y_logstd', shape=[],
                                     initializer=tf.constant_initializer(0.))
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
