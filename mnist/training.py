@@ -77,13 +77,13 @@ if __name__ == '__main__':
         'll_samples': 100,
         'n_basis': 50,
         'n_hiddens': [125, 75, 25],
-        'batch_size': 100,
+        'batch_size': 200,
         'learn_rate': 1e-2,
         'max_epochs': 10000,
         'early_stop': 10,
         'check_freq': 5,
     }
 
-    eval_mses, eval_lls = run_experiment(
+    eval_err_rates, eval_lls = run_experiment(
         model_names, 'MNIST', load_data(5), **training_settings)
-    print(eval_mses, eval_lls)
+    print(eval_err_rates, eval_lls)

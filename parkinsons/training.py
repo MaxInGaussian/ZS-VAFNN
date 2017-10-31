@@ -81,6 +81,6 @@ if __name__ == '__main__':
         'check_freq': 5,
     }
 
-    eval_mses, eval_lls = run_experiment(
+    eval_rmses, eval_lls = run_experiment(
         model_names, 'Parkinsons', load_data(5), **training_settings)
-    print(eval_mses, eval_lls)
+    print(eval_rmses, eval_lls)
