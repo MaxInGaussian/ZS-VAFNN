@@ -68,7 +68,7 @@ if __name__ == '__main__':
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'save': False,
-        'plot': True if '--plot' not in sys.argv else sys.argv['--plot'],
+        'plot': True,
         'drop_rate': 0.5,
         'lb_samples': 20,
         'll_samples': 100,
@@ -83,8 +83,10 @@ if __name__ == '__main__':
      
     for argv in sys.argv:
         if('--' == argv[:2] and '=' in argv):
-            training_settings[argv[2:argv.index('=')]] =\
-                bool(argv[argv.index('=')+1:])
+            eq_ind = argv.index('=')
+            setting_feature = argv[2:eq_ind]
+            if(setting_feature in ['save' or 'plot']):
+                training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
 
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Protein', load_data(5), **training_settings)
