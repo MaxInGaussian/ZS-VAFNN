@@ -62,6 +62,7 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
+    
     model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
     
     train_test_set = load_data(5)
@@ -70,7 +71,7 @@ if __name__ == '__main__':
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'save': False,
-        'plot_err': True,
+        'plot': True,
         'drop_rate': 0.5,
         'lb_samples': 20,
         'll_samples': 100,
@@ -82,6 +83,11 @@ if __name__ == '__main__':
         'early_stop': 10,
         'check_freq': 5,
     }
+     
+    for argv in sys.argv:
+        if('--' == argv[:2] and '=' in argv):
+            training_settings[argv[2:argv.index('=')]] =\
+                bool(argv[argv.index('=')+1:])
 
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Boston Housing', load_data(5), **training_settings)

@@ -50,7 +50,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
 
     # Define training/evaluation parameters
     save = False if 'save' not in args.keys() else args['save']
-    plot_err = True if 'plot_err' not in args.keys() else args['plot_err']
+    plot = True if 'plot' not in args.keys() else args['plot']
     drop_rate = 0.5 if 'drop_rate' not in args.keys() else args['drop_rate']
     lb_samples = 20 if 'lb_samples' not in args.keys() else args['lb_samples']
     ll_samples = 100 if 'll_samples' not in args.keys() else args['ll_samples']
@@ -289,7 +289,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     print('>> Test err_rate = {:.8f}'.format(test_tm))
                 eval_tms[model_name].append(test_tm)
                 eval_lls[model_name].append(test_ll)
-            if(plot_err):
+            if(plot):
                 import matplotlib.pyplot as plt
                 plt.figure()
                 plt.subplot(3, 1, 1)        
