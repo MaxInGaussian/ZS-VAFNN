@@ -32,7 +32,7 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
         for i in range(len(net_sizes)-1):
             f = tf.layers.dense(f, net_sizes[i+1])
-            w_p = tf.zeros([1, 1, net_sizes[i+1]])+drop_rate
+            w_p = tf.ones([1, 1, net_sizes[i+1]])*drop_rate
             w = zs.Bernoulli('w'+str(i), w_p,
                 n_samples=n_samples, group_ndims=2)
             f = f*tf.cast(w, tf.float32)
