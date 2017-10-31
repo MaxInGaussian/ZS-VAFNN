@@ -26,7 +26,7 @@ def get_w_names(net_sizes):
     return ['w'+str(i) for i in range(len(net_sizes)-1)]
 
 @zs.reuse('model')
-def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, task, drop_rate):
+def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, task, is_training):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
         for i in range(len(net_sizes)-1):
