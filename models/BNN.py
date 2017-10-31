@@ -22,7 +22,7 @@ import zhusuan as zs
 import tensorflow as tf
 
 
-def get_w_names(net_sizes, drop_rate):
+def get_w_names(drop_rate, net_sizes):
     return ['w'+str(i) for i in range(len(net_sizes)-1)]
 
 @zs.reuse('model')

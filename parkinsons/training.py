@@ -77,7 +77,7 @@ if __name__ == '__main__':
         'batch_size': 10,
         'learn_rate': 1e-2,
         'max_epochs': 10000,
-        'early_stop': 5,
+        'early_stop': 10,
         'check_freq': 5,
     }
 
