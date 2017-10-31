@@ -210,7 +210,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         if(task == "regression"):
                             print('>> Train rmse = {:.8f}'.format(train_tm))
                         elif(task == "classification"):
-                            print('>> Train acc = {:.8f}'.format(train_tm))
+                            print('>> Train err_rate = {:.8f}'.format(train_tm))
                         lbs, tms, lls = [], [], []
                         time_test = -time.time()
                         for t in range(t_iters):
@@ -242,7 +242,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         if(task == "regression"):
                             print('>> Test rmse = {:.8f}'.format(test_tm))
                         elif(task == "classification"):
-                            print('>> Test acc = {:.8f}'.format(test_tm))
+                            print('>> Test err_rate = {:.8f}'.format(test_tm))
                         if(best_lb < train_lb):
                             best_epoch = len(fold_train_lbs)
                             count_over_train = 0
@@ -286,7 +286,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 if(task == "regression"):
                     print('>> Test rmse = {:.8f}'.format(test_tm))
                 elif(task == "classification"):
-                    print('>> Test acc = {:.8f}'.format(test_tm))
+                    print('>> Test err_rate = {:.8f}'.format(test_tm))
                 eval_tms[model_name].append(test_tm)
                 eval_lls[model_name].append(test_ll)
             if(plot_err):
