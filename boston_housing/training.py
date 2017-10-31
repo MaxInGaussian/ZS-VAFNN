@@ -79,9 +79,10 @@ if __name__ == '__main__':
         'batch_size': 10,
         'learn_rate': 1e-2,
         'max_epochs': 10000,
-        'early_stop': 10,
+        'early_stop': 5,
         'check_freq': 5,
     }
 
     eval_mses, eval_lls = run_experiment(
         model_names, 'Boston Housing', load_data(5), **training_settings)
+    print(eval_mses, eval_lls)

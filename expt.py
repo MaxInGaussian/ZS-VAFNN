@@ -94,12 +94,12 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
         for model_name in model_names:
     
             module = importlib.import_module("models."+model_name)
-            w_names = module.get_w_names(net_sizes)    
+            w_names = module.get_w_names(drop_rate, net_sizes)    
             model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
             
             def log_joint(observed):
-                model, _, _ = module.p_Y_Xw(observed, X, n_basis,
-                    net_sizes, n_samples, task, drop_rate)
+                model, _, _ = module.p_Y_Xw(observed, X, drop_rate, n_basis,
+                    net_sizes, n_samples, task)
                 log_pws = model.local_log_prob(w_names)
                 log_py_xw = model.local_log_prob('y')
                 return tf.add_n(log_pws) + zs.log_mean_exp(log_py_xw, 0) * N
@@ -117,8 +117,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             # prediction: rms error & log likelihood
             observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
             observed.update({'y': y_obs})
-            model, ys, reg_cost = module.p_Y_Xw(observed, X, n_basis,
-                    net_sizes, n_samples, task, drop_rate)
+            model, ys, reg_cost = module.p_Y_Xw(observed, X, drop_rate, n_basis,
+                    net_sizes, n_samples, task)
             if(reg_cost is not None):
                 cost += reg_cost
             y_pred = tf.reduce_mean(ys, 0)

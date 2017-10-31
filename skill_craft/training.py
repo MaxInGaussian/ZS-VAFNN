@@ -60,24 +60,27 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['VAFNN', 'BNN']
+    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
+        'save': False,
         'plot_err': True,
+        'drop_rate': 0.5,
         'lb_samples': 20,
         'll_samples': 100,
         'n_basis': 50,
-        'n_hiddens': [100, 20],
+        'n_hiddens': [100],
         'batch_size': 10,
-        'learn_rate': 1e-3,
+        'learn_rate': 1e-2,
         'max_epochs': 10000,
-        'early_stop': 10,
+        'early_stop': 5,
         'check_freq': 5,
     }
 
     eval_mses, eval_lls = run_experiment(
         model_names, 'Skill Craft', train_test_set, **training_settings)
+    print(eval_mses, eval_lls)

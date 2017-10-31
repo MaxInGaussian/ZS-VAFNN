@@ -23,12 +23,14 @@ import tensorflow as tf
 import tensorflow.contrib.layers as layers
 
 
-def get_w_names(net_sizes):
-    return ['w'+str(i) for i in range(len(net_sizes)-1)]+\
-        ['omega'+str(i) for i in range(len(net_sizes)-2)]
+def get_w_names(drop_rate, net_sizes):
+    w_names = ['w'+str(i) for i in range(len(net_sizes)-1)]
+    if(1-drop_rate > 1e-3):
+        w_names += ['omega'+str(i) for i in range(len(net_sizes)-2)]
+    return w_names
 
 @zs.reuse('model')
-def p_Y_Xw(observed, X, n_basis, net_sizes, n_samples, task, drop_rate):
+def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
         KL_V = 0
