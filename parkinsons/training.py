@@ -80,4 +80,4 @@ if __name__ == '__main__':
     }
 
     eval_mses, eval_lls = run_experiment(
-        model_names, 'Boston Housing', load_data(5), **training_settings)
+        model_names, 'Parkinsons', load_data(5), **training_settings)

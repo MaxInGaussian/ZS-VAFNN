@@ -80,4 +80,4 @@ if __name__ == '__main__':
     }
 
     eval_mses, eval_lls = run_experiment(
-        model_names, 'Boston Housing', train_test_set, **training_settings)
+        model_names, 'Skill Craft', train_test_set, **training_settings)

@@ -185,8 +185,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                                 y_batch = y_train[t*batch_size:(t+1)*batch_size]
                             lb, tm, ll = sess.run(
                                 [lower_bound, task_measure, log_likelihood],
-                            feed_dict={n_samples: ll_samples, is_training: False,
-                                X: X_batch, y: y_batch})
+                                feed_dict={n_samples: ll_samples,
+                                    is_training: False, X: X_batch, y: y_batch})
                             lbs.append(lb);tms.append(tm);lls.append(ll)
                         train_lb, train_tm, train_ll =\
                             np.mean(lbs), np.mean(tms), np.mean(lls)
