@@ -88,9 +88,9 @@ if __name__ == '__main__':
         if('--' == argv[:2] and '=' in argv):
             eq_ind = argv.index('=')
             setting_feature = argv[2:eq_ind]
-            if(setting_feature in ['save' or 'plot']):
+            if(setting_feature in ['save', 'plot']):
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
-                print(argv[eq_ind+1:]=='True')
+    
     print(training_settings)
 
     eval_err_rates, eval_lls = run_experiment(
