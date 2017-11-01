@@ -35,6 +35,7 @@ from expt import run_experiment
 DATA_PATH = 'CASP.csv'
 
 def load_data(n_folds):
+    np.random.seed(1234)
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=None)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
@@ -93,3 +94,12 @@ if __name__ == '__main__':
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Protein', load_data(5), **training_settings)
     print(eval_rmses, eval_lls)
+    
+    for model_name in model_names:
+        rmse_mu = np.mean(eval_rmses[model_name])
+        rmse_std = np.std(eval_rmses[model_name])
+        ll_mu = np.mean(eval_lls[model_name])
+        ll_std = np.std(eval_lls[model_name])
+        print('>>> '+model_name)
+        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))

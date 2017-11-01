@@ -39,6 +39,7 @@ from expt import run_experiment
 DATA_PATH = 'mnist.pkl.gz'
 
 def load_data(n_folds):
+    np.random.seed(1234)
     def to_one_hot(y, n_class):
         y_onehot = np.zeros((y.shape[0], n_class))
         y_onehot[np.arange(y.shape[0]), y] = 1
@@ -96,3 +97,12 @@ if __name__ == '__main__':
     eval_err_rates, eval_lls = run_experiment(
         model_names, 'MNIST', load_data(5), **training_settings)
     print(eval_err_rates, eval_lls)
+    
+    for model_name in model_names:
+        errt_mu = np.mean(eval_rmses[model_name])
+        errt_std = np.std(eval_rmses[model_name])
+        ll_mu = np.mean(eval_lls[model_name])
+        ll_std = np.std(eval_lls[model_name])
+        print('>>> '+model_name)
+        print('>> err_rate = {:.4f} p/m {:.4f}'.format(errt_mu, errt_std))
+        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))

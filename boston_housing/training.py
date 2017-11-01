@@ -100,4 +100,13 @@ if __name__ == '__main__':
     #eval_lls = {'VAFNN': [-2.7996805, -2.5700848, -2.7065516, -2.5331762, -3.6241837], 'DropoutNN': [-2.6721258, -2.5643587, -2.6514294, -2.4678631, -4.2510448], 'BayesNN': [-2.7805142, -2.6953835, -2.7567325, -2.697932, -3.2668509]}
     print(eval_rmses, eval_lls)
     
+    for model_name in model_names:
+        rmse_mu = np.mean(eval_rmses[model_name])
+        rmse_std = np.std(eval_rmses[model_name])
+        ll_mu = np.mean(eval_lls[model_name])
+        ll_std = np.std(eval_lls[model_name])
+        print('>>> '+model_name)
+        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+    
 

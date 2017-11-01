@@ -35,6 +35,7 @@ from expt import run_experiment
 DATA_PATH = 'SkillCraft1_Dataset.csv'
 
 def load_data(n_folds):
+    np.random.seed(1234)
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
@@ -96,3 +97,12 @@ if __name__ == '__main__':
     #eval_rmses = {'VAFNN': [0.94911468, 0.90592599, 0.9234134, 0.87948555, 0.9198904], 'DropoutNN': [1.0023556, 0.96873909, 0.99464464, 0.88871378, 1.0229446], 'BayesNN': [0.97244924, 0.92853415, 1.1606472, 0.87497681, 0.95687288]}
     #eval_lls = {'VAFNN': [-1.3809364, -1.334036, -1.3461936, -1.3046607, -1.3505287], 'DropoutNN': [-1.8677614, -1.4749141, -1.7316606, -1.3531762, -1.5693985], 'BayesNN': [-1.4142454, -1.3750865, -1.3523896, -1.3218606, -1.3870838]}
     print(eval_rmses, eval_lls)
+    
+    for model_name in model_names:
+        rmse_mu = np.mean(eval_rmses[model_name])
+        rmse_std = np.std(eval_rmses[model_name])
+        ll_mu = np.mean(eval_lls[model_name])
+        ll_std = np.std(eval_lls[model_name])
+        print('>>> '+model_name)
+        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))

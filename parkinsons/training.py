@@ -35,6 +35,7 @@ from expt import run_experiment
 DATA_PATH = 'parkinsons_updrs.data'
 
 def load_data(n_folds):
+    np.random.seed(1234)
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=0)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
@@ -92,5 +93,16 @@ if __name__ == '__main__':
 
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Parkinsons', load_data(5), **training_settings)
+
+    #eval_rmses = {'VAFNN': [2.1900573, 1.9485031, 2.2415395, 2.12568, 2.0860109], 'DropoutNN': [3.6205761, 4.1653342, 4.5052161, 4.4773746, 4.0793505], 'BayesNN': [1.4348893, 1.3900162, 1.5177026, 1.3951774, 1.4007771]}
+    #eval_lls = {'VAFNN': [-2.0343075, -1.9461919, -2.2121677, -2.007529, -2.0985222], 'DropoutNN': [-2.221107, -2.3674688, -2.4317329, -2.4002163, -2.3053107], 'BayesNN': [-1.6004318, -1.6017337, -1.6859919, -1.6006194, -1.6119546]}
     print(eval_rmses, eval_lls)
-#{'VAFNN': [2.1900573, 1.9485031, 2.2415395, 2.12568, 2.0860109], 'DropoutNN': [3.6205761, 4.1653342, 4.5052161, 4.4773746, 4.0793505], 'BayesNN': [1.4348893, 1.3900162, 1.5177026, 1.3951774, 1.4007771]} {'VAFNN': [-2.0343075, -1.9461919, -2.2121677, -2.007529, -2.0985222], 'DropoutNN': [-2.221107, -2.3674688, -2.4317329, -2.4002163, -2.3053107], 'BayesNN': [-1.6004318, -1.6017337, -1.6859919, -1.6006194, -1.6119546]}
+    
+    for model_name in model_names:
+        rmse_mu = np.mean(eval_rmses[model_name])
+        rmse_std = np.std(eval_rmses[model_name])
+        ll_mu = np.mean(eval_lls[model_name])
+        ll_std = np.std(eval_lls[model_name])
+        print('>>> '+model_name)
+        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
