@@ -87,6 +87,8 @@ if __name__ == '__main__':
             setting_feature = argv[2:eq_ind]
             if(setting_feature in ['save' or 'plot']):
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
+    
+    print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Protein', load_data(5), **training_settings)
