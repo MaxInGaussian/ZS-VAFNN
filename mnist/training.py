@@ -74,15 +74,15 @@ if __name__ == '__main__':
         'save': False,
         'plot': True,
         'drop_rate': 0.5,
-        'lb_samples': 10,
+        'lb_samples': 20,
         'll_samples': 50,
-        'n_basis': 50,
-        'n_hiddens': [125, 75, 25],
-        'batch_size': 100,
+        'n_basis': 100,
+        'n_hiddens': [D, 2],
+        'batch_size': 500,
         'learn_rate': 1e-2,
         'max_epochs': 10000,
         'early_stop': 10,
-        'check_freq': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
