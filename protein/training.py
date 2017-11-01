@@ -70,8 +70,8 @@ if __name__ == '__main__':
         'save': False,
         'plot': True,
         'drop_rate': 0.5,
-        'lb_samples': 20,
-        'll_samples': 100,
+        'lb_samples': 10,
+        'll_samples': 50,
         'n_basis': 50,
         'n_hiddens': [125, 75, 25],
         'batch_size': 50,
@@ -85,8 +85,10 @@ if __name__ == '__main__':
         if('--' == argv[:2] and '=' in argv):
             eq_ind = argv.index('=')
             setting_feature = argv[2:eq_ind]
-            if(setting_feature in ['save' or 'plot']):
+            if(setting_feature in ['save', 'plot']):
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
+    
+    print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Protein', load_data(5), **training_settings)

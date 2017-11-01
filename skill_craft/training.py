@@ -85,9 +85,12 @@ if __name__ == '__main__':
         if('--' == argv[:2] and '=' in argv):
             eq_ind = argv.index('=')
             setting_feature = argv[2:eq_ind]
-            if(setting_feature in ['save' or 'plot']):
+            if(setting_feature in ['save', 'plot']):
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
+    
+    print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
         model_names, 'Skill Craft', train_test_set, **training_settings)
     print(eval_rmses, eval_lls)
+#{'VAFNN': [0.94911468, 0.90592599, 0.9234134, 0.87948555, 0.9198904], 'DropoutNN': [1.0023556, 0.96873909, 0.99464464, 0.88871378, 1.0229446], 'BayesNN': [0.97244924, 0.92853415, 1.1606472, 0.87497681, 0.95687288]} {'VAFNN': [-1.3809364, -1.334036, -1.3461936, -1.3046607, -1.3505287], 'DropoutNN': [-1.8677614, -1.4749141, -1.7316606, -1.3531762, -1.5693985], 'BayesNN': [-1.4142454, -1.3750865, -1.3523896, -1.3218606, -1.3870838]}
