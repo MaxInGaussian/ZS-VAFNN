@@ -41,6 +41,7 @@ def load_data(n_folds):
         path=DATA_PATH, header=None, index_col=None, sep=",")
     data = data.sample(frac=1).dropna(axis=0)
     data = pd.get_dummies(data).as_matrix()
+    print(data.shape)
     X, y = data[:, :-1].astype(np.float32), data[:, -1].astype(np.int32)
     y = np.hstack((y[:, None], 1-y[:, None]))
     n_data = y.shape[0]
