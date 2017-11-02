@@ -100,8 +100,8 @@ if __name__ == '__main__':
     print(eval_err_rates, eval_lls)
     
     for model_name in model_names:
-        errt_mu = np.mean(eval_rmses[model_name])
-        errt_std = np.std(eval_rmses[model_name])
+        errt_mu = np.mean(eval_err_rates[model_name])
+        errt_std = np.std(eval_err_rates[model_name])
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
