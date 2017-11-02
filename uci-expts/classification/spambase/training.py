@@ -92,7 +92,8 @@ if __name__ == '__main__':
             setting_feature = argv[2:eq_ind]
             if(setting_feature in ['save', 'plot']):
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
-    
+    #{'BayesNN': [0.067619056, 0.068412699, 0.068571433, 0.066190481, 0.062676065], 'DropoutNN': [0.055873021, 0.051904768, 0.055396825, 0.045396827, 0.044898286], 'VAFNN': [0.078412704, 0.075079374, 0.076031752, 0.068888895, 0.061564941]} {'BayesNN': [-0.19746548, -0.1972612, -0.20008332, -0.19065301, -0.18872815], 'DropoutNN': [-0.18716495, -0.17332751, -0.19853355, -0.17928588, -0.17677113], 'VAFNN': [-0.22758095, -0.1995668, -0.22774643, -0.17990424, -0.16990732]}
+
     print(training_settings)
 
     eval_err_rates, eval_lls = run_experiment(
@@ -107,3 +108,16 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> err_rate = {:.4f} p/m {:.4f}'.format(errt_mu, errt_std))
         print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+    
+    '''
+    Result:
+        >>> BayesNN
+        >> rmse = 3.8680 p/m 0.4681
+        >> log_likelihood = -2.7765 p/m 0.0828
+        >>> DropoutNN
+        >> rmse = 4.3249 p/m 0.2355
+        >> log_likelihood = -2.7864 p/m 0.2238
+        >>> VAFNN
+        >> rmse = 3.4084 p/m 0.3560
+        >> log_likelihood = -2.6322 p/m 0.1433
+    '''

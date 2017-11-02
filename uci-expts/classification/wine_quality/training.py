@@ -103,6 +103,7 @@ if __name__ == '__main__':
     eval_err_rates, eval_lls = run_experiment(
         model_names, 'Wine Quality', train_test_set, **training_settings)
     print(eval_err_rates, eval_lls)
+    #{'BayesNN': [0.44092211, 0.45516115, 0.46715629, 0.43888211, 0.43265733], 'DropoutNN': [0.44981638, 0.44394124, 0.4481436, 0.42766216, 0.4279021], 'VAFNN': [0.44940841, 0.42811096, 0.4644635, 0.4272134, 0.41489512]} {'BayesNN': [-1.0454601, -1.0824183, -1.101755, -1.0656945, -1.0338538], 'DropoutNN': [-1.0423433, -1.0654633, -1.0732477, -1.0289091, -1.0281358], 'VAFNN': [-1.0262312, -1.0475413, -1.1155545, -1.0521262, -1.0072927]}
     
     for model_name in model_names:
         errt_mu = np.mean(eval_err_rates[model_name])
