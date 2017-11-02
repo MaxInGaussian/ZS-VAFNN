@@ -40,8 +40,8 @@ def load_data(n_folds):
     data = pd.DataFrame.from_csv(
         path=DATA_PATH, header=None, index_col=None, sep=",")
     data = data.sample(frac=1).dropna(axis=0)
-    data = pd.get_dummies(data).as_matrix()
     print(pd.get_dummies(data).head())
+    data = pd.get_dummies(data).as_matrix()
     X, y = data[:, :-2].astype(np.float32), data[:, -2:].astype(np.int32)
     n_data = y.shape[0]
     n_partition = n_data//n_folds
