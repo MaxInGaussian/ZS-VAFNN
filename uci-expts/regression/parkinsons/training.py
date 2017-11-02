@@ -93,7 +93,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'Parkinsons', load_data(5), **training_settings)
+        model_names, 'Parkinsons', train_test_set, **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
