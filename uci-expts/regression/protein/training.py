@@ -18,7 +18,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
-sys.path.append("../")
+sys.path.append("../../../")
 
 import os
 import time
@@ -32,12 +32,12 @@ import zhusuan as zs
 from expt import run_experiment
 
 
-DATA_PATH = 'SkillCraft1_Dataset.csv'
+DATA_PATH = 'CASP.csv'
 
 def load_data(n_folds):
-    np.random.seed(1234)
+    np.random.seed(314159)
     import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
+    data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=None)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
     X, y = data[:, 1:], data[:, 0]
     y = y[:, None]
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
+    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -70,16 +70,16 @@ if __name__ == '__main__':
     training_settings = {
         'save': False,
         'plot': True,
-        'drop_rate': 0.5,
-        'lb_samples': 20,
-        'll_samples': 100,
         'n_basis': 50,
-        'n_hiddens': [75, 25],
-        'batch_size': 10,
+        'drop_rate': 0.5,
+        'lb_samples': 10,
+        'll_samples': 50,
+        'n_hiddens': [100, 50, 25],
+        'batch_size': 100,
         'learn_rate': 1e-2,
-        'max_epochs': 10000,
-        'early_stop': 10,
-        'check_freq': 5,
+        'max_epochs': 500,
+        'early_stop': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
@@ -92,10 +92,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'Skill Craft', train_test_set, **training_settings)
-
-    #eval_rmses = {'VAFNN': [0.94911468, 0.90592599, 0.9234134, 0.87948555, 0.9198904], 'DropoutNN': [1.0023556, 0.96873909, 0.99464464, 0.88871378, 1.0229446], 'BayesNN': [0.97244924, 0.92853415, 1.1606472, 0.87497681, 0.95687288]}
-    #eval_lls = {'VAFNN': [-1.3809364, -1.334036, -1.3461936, -1.3046607, -1.3505287], 'DropoutNN': [-1.8677614, -1.4749141, -1.7316606, -1.3531762, -1.5693985], 'BayesNN': [-1.4142454, -1.3750865, -1.3523896, -1.3218606, -1.3870838]}
+        model_names, 'Protein', load_data(5), **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:

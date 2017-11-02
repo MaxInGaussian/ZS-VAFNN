@@ -18,7 +18,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
-sys.path.append("../../")
+sys.path.append("../../../")
 
 import os
 import time
@@ -32,15 +32,14 @@ import zhusuan as zs
 from expt import run_experiment
 
 
-DATA_PATH = 'housing.data'
+DATA_PATH = 'parkinsons_updrs.data'
 
 def load_data(n_folds):
     np.random.seed(314159)
     import pandas as pd
-    data = pd.DataFrame.from_csv(
-        path=DATA_PATH, header=None, index_col=None, sep="[ ^]+")
+    data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=0)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
-    X, y = data[:, :-1], data[:, -1]
+    X, y = np.hstack((data[:, :4], data[:, 5:])), data[:, 4]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
@@ -62,22 +61,21 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
+    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
     
-    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
-    
-    train_test_set = load_data(4)
+    train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'save': False,
         'plot': True,
+        'n_basis': 50,
         'drop_rate': 0.5,
         'lb_samples': 10,
         'll_samples': 50,
-        'n_basis': 50,
-        'n_hiddens': [50],
-        'batch_size': 10,
+        'n_hiddens': [50, 25],
+        'batch_size': 50,
         'learn_rate': 1e-2,
         'max_epochs': 500,
         'early_stop': 5,
@@ -92,12 +90,9 @@ if __name__ == '__main__':
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
     
     print(training_settings)
-    
-    eval_rmses, eval_lls = run_experiment(
-        model_names, 'Boston Housing', load_data(5), **training_settings)   
 
-    #eval_rmses = {'VAFNN': [3.8502631, 3.2707088, 3.5575385, 3.2430882, 4.8567238], 'DropoutNN': [4.2909245, 3.1268177, 4.7694712, 3.8257821, 4.5700974], 'BayesNN': [3.9643605, 3.3056502, 4.1267033, 3.2882073, 5.1180506]}
-    #eval_lls = {'VAFNN': [-2.7996805, -2.5700848, -2.7065516, -2.5331762, -3.6241837], 'DropoutNN': [-2.6721258, -2.5643587, -2.6514294, -2.4678631, -4.2510448], 'BayesNN': [-2.7805142, -2.6953835, -2.7567325, -2.697932, -3.2668509]}
+    eval_rmses, eval_lls = run_experiment(
+        model_names, 'Parkinsons', load_data(5), **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
@@ -108,5 +103,3 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
         print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
-    
-

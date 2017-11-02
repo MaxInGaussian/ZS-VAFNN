@@ -18,7 +18,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
-sys.path.append("../")
+sys.path.append("../../../")
 
 import os
 import time
@@ -32,14 +32,14 @@ import zhusuan as zs
 from expt import run_experiment
 
 
-DATA_PATH = 'Relation Network (Directed).data'
+DATA_PATH = 'SkillCraft1_Dataset.csv'
 
 def load_data(n_folds):
-    np.random.seed(1234)
+    np.random.seed(314159)
     import pandas as pd
     data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
-    X, y = data[:, :-1], data[:, -1]
+    X, y = data[:, 1:], data[:, 0]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
+    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -70,16 +70,16 @@ if __name__ == '__main__':
     training_settings = {
         'save': False,
         'plot': True,
+        'n_basis': 50,
         'drop_rate': 0.5,
         'lb_samples': 10,
         'll_samples': 50,
-        'n_basis': 50,
-        'n_hiddens': [125, 75, 25],
+        'n_hiddens': [50, 25],
         'batch_size': 50,
         'learn_rate': 1e-2,
-        'max_epochs': 10000,
-        'early_stop': 10,
-        'check_freq': 5,
+        'max_epochs': 500,
+        'early_stop': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'KEGG', load_data(5), **training_settings)
+        model_names, 'Skill Craft', train_test_set, **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
@@ -102,5 +102,4 @@ if __name__ == '__main__':
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
         print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
-        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
         print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))

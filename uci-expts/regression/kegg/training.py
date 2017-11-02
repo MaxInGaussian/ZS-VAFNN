@@ -18,7 +18,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
-sys.path.append("../")
+sys.path.append("../../../")
 
 import os
 import time
@@ -32,14 +32,14 @@ import zhusuan as zs
 from expt import run_experiment
 
 
-DATA_PATH = 'parkinsons_updrs.data'
+DATA_PATH = 'Relation Network (Directed).data'
 
 def load_data(n_folds):
-    np.random.seed(1234)
+    np.random.seed(314159)
     import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=0)
+    data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
-    X, y = np.hstack((data[:, :4], data[:, 5:])), data[:, 4]
+    X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
+    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -70,16 +70,16 @@ if __name__ == '__main__':
     training_settings = {
         'save': False,
         'plot': True,
-        'drop_rate': 0.5,
-        'lb_samples': 20,
-        'll_samples': 100,
         'n_basis': 50,
-        'n_hiddens': [75, 25],
-        'batch_size': 10,
+        'drop_rate': 0.5,
+        'lb_samples': 10,
+        'll_samples': 50,
+        'n_hiddens': [100, 50, 25],
+        'batch_size': 100,
         'learn_rate': 1e-2,
-        'max_epochs': 10000,
-        'early_stop': 10,
-        'check_freq': 5,
+        'max_epochs': 500,
+        'early_stop': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
@@ -92,10 +92,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'Parkinsons', load_data(5), **training_settings)
-
-    #eval_rmses = {'VAFNN': [2.1900573, 1.9485031, 2.2415395, 2.12568, 2.0860109], 'DropoutNN': [3.6205761, 4.1653342, 4.5052161, 4.4773746, 4.0793505], 'BayesNN': [1.4348893, 1.3900162, 1.5177026, 1.3951774, 1.4007771]}
-    #eval_lls = {'VAFNN': [-2.0343075, -1.9461919, -2.2121677, -2.007529, -2.0985222], 'DropoutNN': [-2.221107, -2.3674688, -2.4317329, -2.4002163, -2.3053107], 'BayesNN': [-1.6004318, -1.6017337, -1.6859919, -1.6006194, -1.6119546]}
+        model_names, 'KEGG', load_data(5), **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
