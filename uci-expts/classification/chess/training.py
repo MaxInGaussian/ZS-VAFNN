@@ -29,58 +29,60 @@ from six.moves import range, zip
 import numpy as np
 import zhusuan as zs
 
+import six
+import gzip
+from six.moves import cPickle as pickle
+
 from expt import run_experiment
 
 
-DATA_PATH = 'Relation Network (Directed).data'
+DATA_PATH = 'mnist.pkl.gz'
 
 def load_data(n_folds):
-    np.random.seed(314159)
-    import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
-    data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
-    X, y = data[:, :-1], data[:, -1]
-    y = y[:, None]
-    n_data = y.shape[0]
-    n_partition = n_data//n_folds
-    n_train = n_partition*(n_folds-1)
-    train_test_set = []
-    for fold in range(n_folds):
-        if(fold == n_folds-1):
-            test_inds = np.arange(n_data)[fold*n_partition:]
-        else:
-            test_inds = np.arange(n_data)[fold*n_partition:(fold+1)*n_partition]
-        train_inds = np.setdiff1d(range(n_data), test_inds)
-        X_train, y_train = X[train_inds], y[train_inds]
-        X_test, y_test = X[test_inds], y[test_inds]
-        train_test_set.append([X_train, y_train, X_test, y_test])
-    return train_test_set
+    np.random.seed(1234)
+    def to_one_hot(y, n_class):
+        y_onehot = np.zeros((y.shape[0], n_class))
+        y_onehot[np.arange(y.shape[0]), y] = 1
+        return y_onehot
+    f = gzip.open(DATA_PATH, 'rb')
+    if six.PY2:
+        train_set, valid_set, test_set = pickle.load(f)
+    else:
+        train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
+    f.close()
+    X_train, y_train = train_set[0], train_set[1]
+    X_valid, y_valid = valid_set[0], valid_set[1]
+    X_test, y_test = test_set[0], test_set[1]
+    X_train = np.vstack([X_train, X_valid]).astype('float32')
+    y_train = np.concatenate([y_train, y_valid])
+    return [[X_train, to_one_hot(y_train, 10), X_test, to_one_hot(y_test, 10)]]
+
 
 if __name__ == '__main__':
 
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
+    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
-        'task': "regression",
+        'task': "classification",
         'save': False,
         'plot': True,
-        'n_basis': 50,
         'drop_rate': 0.5,
         'lb_samples': 10,
         'll_samples': 50,
-        'n_hiddens': [100, 50, 25],
-        'batch_size': 100,
+        'n_basis': 50,
+        'n_hiddens': [D//4],
+        'batch_size': 500,
         'learn_rate': 1e-2,
-        'max_epochs': 500,
-        'early_stop': 5,
-        'check_freq': 10,
+        'max_epochs': 1000,
+        'early_stop': 10,
+        'check_freq': 5,
     }
      
     for argv in sys.argv:
@@ -92,15 +94,15 @@ if __name__ == '__main__':
     
     print(training_settings)
 
-    eval_rmses, eval_lls = run_experiment(
-        model_names, 'KEGG', load_data(5), **training_settings)
-    print(eval_rmses, eval_lls)
+    eval_err_rates, eval_lls = run_experiment(
+        model_names, 'Chess', load_data(5), **training_settings)
+    print(eval_err_rates, eval_lls)
     
     for model_name in model_names:
-        rmse_mu = np.mean(eval_rmses[model_name])
-        rmse_std = np.std(eval_rmses[model_name])
+        errt_mu = np.mean(eval_rmses[model_name])
+        errt_std = np.std(eval_rmses[model_name])
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> err_rate = {:.4f} p/m {:.4f}'.format(errt_mu, errt_std))
         print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))

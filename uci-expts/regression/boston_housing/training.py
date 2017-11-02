@@ -64,11 +64,12 @@ if __name__ == '__main__':
     
     model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
     
-    train_test_set = load_data(4)
+    train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
+        'task': "regression",
         'save': False,
         'plot': True,
         'n_basis': 50,

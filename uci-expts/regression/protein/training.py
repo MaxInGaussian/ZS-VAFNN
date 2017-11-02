@@ -68,6 +68,7 @@ if __name__ == '__main__':
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
+        'task': "regression",
         'save': False,
         'plot': True,
         'n_basis': 50,
