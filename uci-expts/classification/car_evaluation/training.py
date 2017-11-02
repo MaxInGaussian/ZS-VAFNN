@@ -110,12 +110,12 @@ if __name__ == '__main__':
     '''
     Result:
         >>> BayesNN
-        >> rmse = 3.8680 p/m 0.4681
-        >> log_likelihood = -2.7765 p/m 0.0828
+        >> err_rate = 0.0378 p/m 0.0058
+        >> log_likelihood = -0.3359 p/m 0.0650
         >>> DropoutNN
-        >> rmse = 4.3249 p/m 0.2355
-        >> log_likelihood = -2.7864 p/m 0.2238
+        >> err_rate = 0.1611 p/m 0.0590
+        >> log_likelihood = -0.1530 p/m 0.0137
         >>> VAFNN
-        >> rmse = 3.4084 p/m 0.3560
-        >> log_likelihood = -2.6322 p/m 0.1433
+        >> err_rate = 0.0732 p/m 0.0707
+        >> log_likelihood = -0.1337 p/m 0.0344
     '''
