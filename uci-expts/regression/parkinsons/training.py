@@ -104,3 +104,16 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
         print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+    
+    '''
+    Result:
+        >>> BayesNN
+        >> rmse = 1.9604 p/m 0.0347
+        >> log_likelihood = -2.0572 p/m 0.0072
+        >>> DropoutNN
+        >> rmse = 4.2293 p/m 0.1552
+        >> log_likelihood = -2.4655 p/m 0.0179
+        >>> VAFNN
+        >> rmse = 1.2572 p/m 0.1040
+        >> log_likelihood = -1.6072 p/m 0.0678
+    '''
