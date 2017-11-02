@@ -1,0 +1,910 @@
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_y73ofsjs.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 292, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 237, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 152
+Inputs types: [TensorType(float32, matrix)]
+Inputs shapes: [(100, 100)]
+Inputs strides: [(400, 4)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_2_37rqzh.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 292, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 237, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 152
+Inputs types: [TensorType(float32, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(200, 4)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_jlgpz1o8.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 292, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 237, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 152
+Inputs types: [TensorType(float32, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(200, 4)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_j4s49zmr.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 174, in compile_theano_funcs
+    sig2, F, M, V = self.feature_maps(X, params)
+  File "../../vafnet/model/VAFnet.py", line 149, in feature_maps
+    F[-1] /= Tt.sqrt(M.shape[0])
+AttributeError: 'list' object has no attribute 'shape'
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_azw1gwf6.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+WARNING (theano.tensor.blas): We did not find a dynamic library in the library_dir of the library we use for blas. If you use ATLAS, make sure to compile it with dynamics library.
+done.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 294, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 239, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 147
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, Dot22.0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_g4cfyt3z.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+WARNING (theano.tensor.blas): We did not find a dynamic library in the library_dir of the library we use for blas. If you use ATLAS, make sure to compile it with dynamics library.
+done.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 294, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 239, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 147
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, Dot22.0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_ikc6vst8.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+WARNING (theano.tensor.blas): We did not find a dynamic library in the library_dir of the library we use for blas. If you use ATLAS, make sure to compile it with dynamics library.
+done.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 294, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 239, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 147
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, Dot22.0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_mb4s_8k4.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+WARNING (theano.tensor.blas): We did not find a dynamic library in the library_dir of the library we use for blas. If you use ATLAS, make sure to compile it with dynamics library.
+done.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 294, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 239, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(Gemm{no_inplace}.0)
+Toposort index: 133
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, Dot22.0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 281, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 178, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_w31fmyu3.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 292, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 237, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 141
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags__38_onbs.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 292, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 237, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 111
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+Can not use cuDNN on context None: cannot compile with cuDNN. We got this error:
+b'/tmp/try_flags_afvzv7ii.c:4:19: fatal error: cudnn.h: No such file or directory\ncompilation terminated.\n'
+Mapped name None to device cuda: GeForce GTX 1080 (0000:02:00.0)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 292, in optimize
+    callback=None if(visualizer is None) else animate)
+  File "../../vafnet/model/VAFnet.py", line 237, in cross_validate
+    self.fit(Xt, Yt, change)
+  File "../../vafnet/model/VAFnet.py", line 126, in fit
+    'train'](self.Xt, self.Yt)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 917, in __call__
+    storage_map=getattr(self.fn, 'storage_map', None))
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/link.py", line 325, in raise_with_op
+    reraise(exc_type, exc_value, exc_trace)
+  File "/usr/lib/python3/dist-packages/six.py", line 685, in reraise
+    raise value.with_traceback(tb)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/compile/function_module.py", line 903, in __call__
+    self.fn() if output_subset is None else\
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/gof/op.py", line 892, in rval
+    r = p(n, [x[0] for x in i], o)
+  File "/usr/local/lib/python3.5/dist-packages/Theano-0.10.0b1-py3.5.egg/theano/tensor/slinalg.py", line 76, in perform
+    z[0] = scipy.linalg.cholesky(x, lower=self.lower).astype(x.dtype)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 81, in cholesky
+    check_finite=check_finite)
+  File "/usr/local/lib/python3.5/dist-packages/scipy/linalg/decomp_cholesky.py", line 20, in _cholesky
+    a1 = asarray_chkfinite(a)
+  File "/usr/local/lib/python3.5/dist-packages/numpy/lib/function_base.py", line 1215, in asarray_chkfinite
+    "array must not contain infs or NaNs")
+ValueError: array must not contain infs or NaNs
+Apply node that caused the error: Cholesky{lower=True, destructive=False, on_error='raise'}(HostFromGpu(gpuarray).0)
+Toposort index: 111
+Inputs types: [TensorType(float64, matrix)]
+Inputs shapes: [(50, 50)]
+Inputs strides: [(400, 8)]
+Inputs values: ['not shown']
+Outputs clients: [[Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, InplaceDimShuffle{1,0}.0), InplaceDimShuffle{1,0}(Cholesky{lower=True, destructive=False, on_error='raise'}.0), MatrixInverse(Cholesky{lower=True, destructive=False, on_error='raise'}.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, dot.0), Solve{A_structure='lower_triangular', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), Solve{A_structure='general', lower=False, overwrite_A=False, overwrite_b=False}(Cholesky{lower=True, destructive=False, on_error='raise'}.0, HostFromGpu(gpuarray).0), GpuFromHost<None>(Cholesky{lower=True, destructive=False, on_error='raise'}.0)]]
+
+Backtrace when the node is created(use Theano flag traceback.limit=N to make it longer):
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+  File "training.py", line 128, in <module>
+    model.optimize(X_train, y_train, funcs, visualizer, **opt_params)
+  File "../../vafnet/model/VAFnet.py", line 279, in optimize
+    self.compile_theano_funcs(algo, algo_params, dropout)
+  File "../../vafnet/model/VAFnet.py", line 176, in compile_theano_funcs
+    L = Tlin.cholesky(A)
+
+HINT: Use the Theano flag 'exception_verbosity=high' for a debugprint and storage map footprint of this apply node.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+-------------------------- VALIDATION ITERATION 1 ---------------------------
+VAFnet(30,20,10)   mnlp = -4.64787098961121705742449705667240777984261512756e-02
+VAFnet(30,20,10)    mse = 1.328629674496686202678219501649437006562948226929e-02
+VAFnet(30,20,10)   nmse = 8.290463098165878896850244927918538451194763183594e-01
+VAFnet(30,20,10)    obj = 4.812472751057831919752061367034912109375000000000e+04
+VAFnet(30,20,10)   rmse = 1.152416399645836975196289131417870521545410156250e-01
+VAFnet(30,20,10)  score = 4.055136963786395987163757581583922728896141052246e-01
+VAFnet(30,20,10)   time = 5.976861143112182617187500000000000000000000000000e+01
+-------------------------- VALIDATION ITERATION 101 ---------------------------
+VAFnet(30,20,10)   mnlp = -9.85432541314217202987890686927130445837974548340e-01
+VAFnet(30,20,10)    mse = 6.781114903491708943705784662370206206105649471283e-03
+VAFnet(30,20,10)   nmse = 4.231316854764953228063006918091559782624244689941e-01
+VAFnet(30,20,10)    obj = 1.487947679065932425146456807851791381835937500000e+04
+VAFnet(30,20,10)   rmse = 8.233711400752526110569107231640373356640338897705e-02
+VAFnet(30,20,10)  score = 1.150937342981109279271834111568750813603401184082e-01
+VAFnet(30,20,10)   time = 5.001012301206588745117187500000000000000000000000e+03
+-------------------------- VALIDATION ITERATION 201 ---------------------------
+VAFnet(30,20,10)   mnlp = -1.08581052523803367471089131868211552500724792480e+00
+VAFnet(30,20,10)    mse = 6.105405779943381960883641568216262385249137878418e-03
+VAFnet(30,20,10)   nmse = 3.810114131166463802280475192674202844500541687012e-01
+VAFnet(30,20,10)    obj = 1.144187823442472472379449754953384399414062500000e+04
+VAFnet(30,20,10)   rmse = 7.812594679511869477650520821043755859136581420898e-02
+VAFnet(30,20,10)  score = 9.624203548621916570748879848906653933227062225342e-02
+VAFnet(30,20,10)   time = 9.642988364458084106445312500000000000000000000000e+03
+-------------------------- VALIDATION ITERATION 301 ---------------------------
+VAFnet(30,20,10)   mnlp = -1.12768948988962081081410815386334434151649475098e+00
+VAFnet(30,20,10)    mse = 5.822909035455531116809435587811094592325389385223e-03
+VAFnet(30,20,10)   nmse = 3.633819375025792441924465947522548958659172058105e-01
+VAFnet(30,20,10)    obj = 9.861062824423283018404617905616760253906250000000e+03
+VAFnet(30,20,10)   rmse = 7.630139187096483810446301276897429488599300384521e-02
+VAFnet(30,20,10)  score = 8.891534635723709334431674733423278667032718658447e-02
+VAFnet(30,20,10)   time = 1.491990932655334472656250000000000000000000000000e+04
+-------------------------- VALIDATION ITERATION 401 ---------------------------
+VAFnet(30,20,10)   mnlp = -1.17229993723439851471823658357607200741767883301e+00
+VAFnet(30,20,10)    mse = 5.462113512581900746922780598424651543609797954559e-03
+VAFnet(30,20,10)   nmse = 3.408696691417090196551953340531326830387115478516e-01
+VAFnet(30,20,10)    obj = 8.116461051118604700604919344186782836914062500000e+03
+VAFnet(30,20,10)   rmse = 7.390525628478222808226405504683498293161392211914e-02
+VAFnet(30,20,10)  score = 8.059905808520186065724288937417441047728061676025e-02
+VAFnet(30,20,10)   time = 1.901071205353736877441406250000000000000000000000e+04
+-------------------------- VALIDATION ITERATION 501 ---------------------------
+VAFnet(30,20,10)   mnlp = -1.18948159550833842956762964604422450065612792969e+00
+VAFnet(30,20,10)    mse = 5.320398992089323507437281790544147952459752559662e-03
+VAFnet(30,20,10)   nmse = 3.320306978650159890342763446824392303824424743652e-01
+VAFnet(30,20,10)    obj = 7.512356933632736399886198341846466064453125000000e+03
+VAFnet(30,20,10)   rmse = 7.293994732446330842012827133657992817461490631104e-02
+VAFnet(30,20,10)  score = 7.748538900910990900872121756037813611328601837158e-02
+VAFnet(30,20,10)   time = 2.333851587247848510742187500000000000000000000000e+04
+vafnet is not installed yet! Trying to call directly from source...
+done.
+-------------------------------------------------------------------------------- 
+Initializing hyperparameters...
+done.
+-------------------------------------------------------------------------------- 
+Compiling theano functions...
+done.
+-------------------------- VALIDATION ITERATION 1 ---------------------------
+VAFnet(60,40,20)   mnlp = -6.17113213427427753643428331997711211442947387695e-01
+VAFnet(60,40,20)    mse = 1.115415568895679505889706462085086968727409839630e-02
+VAFnet(60,40,20)   nmse = 7.131530339094613868411443036166019737720489501953e-01
+VAFnet(60,40,20)    obj = 7.288014291198406135663390159606933593750000000000e+04
+VAFnet(60,40,20)   rmse = 1.055139850818204855231741134957701433449983596802e-01
+VAFnet(60,40,20)  score = 2.501237644984499741696026831050403416156768798828e-01
+VAFnet(60,40,20)   time = 1.002179241180419921875000000000000000000000000000e+01
+-------------------------- VALIDATION ITERATION 101 ---------------------------
+VAFnet(60,40,20)   mnlp = -7.95372984666829485611572181369410827755928039551e-01
+VAFnet(60,40,20)    mse = 6.827261345447936365452012985599594685481861233711e-04
+VAFnet(60,40,20)   nmse = 4.366396182456274560612641266743594314903020858765e-02
+VAFnet(60,40,20)    obj = 7.085011002216704946476966142654418945312500000000e+04
+VAFnet(60,40,20)   rmse = 2.609437821586348821290002319983614142984151840210e-02
+VAFnet(60,40,20)  score = 1.358126172122419046683905463623887044377624988556e-02
+VAFnet(60,40,20)   time = 1.045014006853103637695312500000000000000000000000e+03
+-------------------------- VALIDATION ITERATION 201 ---------------------------
+VAFnet(60,40,20)   mnlp = -8.33706307086323650246129091101465746760368347168e-01
+VAFnet(60,40,20)    mse = 4.568071421596183248614586602798226522281765937805e-04
+VAFnet(60,40,20)   nmse = 2.920959482136611939928627634799340739846229553223e-02
+VAFnet(60,40,20)    obj = 6.945896171479646000079810619354248046875000000000e+04
+VAFnet(60,40,20)   rmse = 2.132855289823278738259304532220994587987661361694e-02
+VAFnet(60,40,20)  score = 8.847297956811099595153535801728139631450176239014e-03
+VAFnet(60,40,20)   time = 2.047037966728210449218750000000000000000000000000e+03

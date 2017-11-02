@@ -113,7 +113,6 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             cost = tf.reduce_mean(lower_bound.sgvb())
             lower_bound = tf.reduce_mean(lower_bound)
             
-        
             # prediction: rms error & log likelihood
             observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
             observed.update({'y': y_obs})
@@ -138,10 +137,6 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             elif(task == "classification"):
                 log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))
             
-            # if(model_name == "DropoutNN"):
-            #     cost = task_measure
-            #     lower_bound = -task_measure
-            
             lr_ph = tf.placeholder(tf.float32, shape=[])
             global_step = tf.Variable(0, trainable=False)
             lr_ts = tf.train.exponential_decay(
@@ -155,8 +150,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
         
             # Run the inference
             best_epoch, best_lb, count_over_train = 0, -np.Infinity, 0
-            fold_train_lbs, fold_train_tms, fold_train_lls = [], [], []
-            fold_test_lbs, fold_test_tms, fold_test_lls = [], [], []
+            f_train_lbs, f_train_tms, f_train_lls = [], [], []
+            f_test_lbs, f_test_tms, f_test_lls = [], [], []
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
                 for epoch in range(max_epochs):
@@ -195,14 +190,14 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         train_lb, train_tm, train_ll =\
                             np.mean(lbs), np.mean(tms), np.mean(lls)
                         time_train += time.time()
-                        if(len(fold_train_lbs)==0):
-                            fold_train_lbs.append(train_lb)
-                            fold_train_tms.append(train_tm)
-                            fold_train_lls.append(train_ll)
+                        if(len(f_train_lbs)==0):
+                            f_train_lbs.append(train_lb)
+                            f_train_tms.append(train_tm)
+                            f_train_lls.append(train_ll)
                         else:
-                            fold_train_lbs.append(train_lb)
-                            fold_train_tms.append(train_tm)
-                            fold_train_lls.append(train_ll)
+                            f_train_lbs.append(train_lb)
+                            f_train_tms.append(train_tm)
+                            f_train_lls.append(train_ll)
                         print('>>> TRAIN ({:.1f}s) - best_lb = {:.8f}'.format(
                             time_train, best_lb))
                         print('>> Train lower bound = {:.8f}'.format(train_lb))
@@ -222,20 +217,20 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                                 y_batch = y_test[t*batch_size:(t+1)*batch_size]
                             lb, mse, ll = sess.run(
                                 [lower_bound, task_measure, log_likelihood],
-                            feed_dict={n_samples: ll_samples,
+                                feed_dict={n_samples: ll_samples,
                                 X: X_batch, y: y_batch})
                             lbs.append(lb);tms.append(mse);lls.append(ll)
                         test_lb, test_tm, test_ll =\
                             np.mean(lbs), np.mean(tms), np.mean(lls)
                         time_test += time.time()
-                        if(len(fold_test_lbs)==0):
-                            fold_test_lbs.append(test_lb)
-                            fold_test_tms.append(test_tm)
-                            fold_test_lls.append(test_ll)
+                        if(len(f_test_lbs)==0):
+                            f_test_lbs.append(test_lb)
+                            f_test_tms.append(test_tm)
+                            f_test_lls.append(test_ll)
                         else:
-                            fold_test_lbs.append(test_lb)
-                            fold_test_tms.append(test_tm)
-                            fold_test_lls.append(test_ll)
+                            f_test_lbs.append(test_lb)
+                            f_test_tms.append(test_tm)
+                            f_test_lls.append(test_ll)
                         print('>>> TEST ({:.1f}s)'.format(time_test))
                         print('>> Test lower bound = {:.8f}'.format(test_lb))
                         print('>> Test log_likelihood = {:.8f}'.format(test_ll))
@@ -244,7 +239,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         elif(task == "classification"):
                             print('>> Test err_rate = {:.8f}'.format(test_tm))
                         if(best_lb < train_lb):
-                            best_epoch = len(fold_train_lbs)
+                            best_epoch = len(f_train_lbs)
                             count_over_train = 0
                             best_lb = train_lb
                             if(save):
@@ -294,44 +289,34 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 plt.figure()
                 plt.subplot(3, 1, 1)        
                 plt.title(model_code+" on "+dataset_name)
-                
-
-                test_max_epochs = (np.arange(best_epoch)+1)*check_freq
-                plt.semilogx(test_max_epochs,
-                    fold_train_lbs[:best_epoch], '--', label='Train')
-                plt.semilogx(test_max_epochs,
-                    fold_test_lbs[:best_epoch], label='Test')
+                test_max_epochs = np.arange(len(f_train_lbs))*check_freq
+                plt.semilogx(test_max_epochs, f_train_lbs, '--', label='Train')
+                plt.semilogx(test_max_epochs, f_test_lbs, label='Test')
                 plt.xlabel('Epoch')
                 plt.ylabel('ELBO {:.4f}'.format(test_lb))
-                
                 plt.subplot(3, 1, 2)
-                plt.semilogx(test_max_epochs,
-                    fold_train_tms[:best_epoch], '--', label='Train')
-                plt.semilogx(test_max_epochs,
-                    fold_test_tms[:best_epoch], label='Test')
+                plt.semilogx(test_max_epochs, f_train_tms, '--', label='Train')
+                plt.semilogx(test_max_epochs, f_test_tms, label='Test')
                 plt.legend(loc='lower left')
                 plt.xlabel('Epoch')
                 if(task == "regression"):
                     plt.ylabel('RMSE {:.4f}'.format(test_tm))
                 elif(task == "classification"):
-                    plt.ylabel('Accuracy {:.4f}'.format(test_tm))
+                    plt.ylabel('CERR {:.4f}'.format(test_tm))
                     plt.ylim([0, 1])
-                    
                 plt.subplot(3, 1, 3)
-                plt.semilogx(test_max_epochs,
-                    fold_train_lls[:best_epoch], '--', label='Train')
-                plt.semilogx(test_max_epochs,
-                    fold_test_lls[:best_epoch], label='Test')
+                plt.semilogx(test_max_epochs, f_train_lls, '--', label='Train')
+                plt.semilogx(test_max_epochs, f_test_lls, label='Test')
                 plt.xlabel('Epoch')
                 plt.ylabel('Log Likelihood {:.4f}'.format(test_ll))
                 if not os.path.exists('./plots/'):
                     os.makedirs('./plots/')
                 plt.savefig('./plots/'+model_code+'_'+problem_name+'.png')
                 plt.close()
-            train_lbs.append(np.array(fold_train_lbs))
-            train_tms.append(np.array(fold_train_tms))
-            train_lls.append(np.array(fold_train_lls))
-            test_lbs.append(np.array(fold_test_lbs))
-            test_tms.append(np.array(fold_test_tms))
-            test_lls.append(np.array(fold_test_lls))
+            train_lbs.append(np.array(f_train_lbs))
+            train_tms.append(np.array(f_train_tms))
+            train_lls.append(np.array(f_train_lls))
+            test_lbs.append(np.array(f_test_lbs))
+            test_tms.append(np.array(f_test_tms))
+            test_lls.append(np.array(f_test_lls))
     return eval_tms, eval_lls
