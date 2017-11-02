@@ -101,7 +101,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_err_rates, eval_lls = run_experiment(
-        model_names, 'Car Evaluation', train_test_set, **training_settings)
+        model_names, 'Wine Quality', train_test_set, **training_settings)
     print(eval_err_rates, eval_lls)
     
     for model_name in model_names:
