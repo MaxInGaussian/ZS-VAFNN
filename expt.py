@@ -107,24 +107,23 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     log_j += tf.add_n(log_pws)
                 return log_j
 
+            observed = {'y': y_obs}
             if(len(w_names)):
                 var = module.var_q_w(n_basis, net_sizes, n_samples)
                 q_w_outputs = var.query(w_names,
                     outputs=True, local_log_prob=True)
                 latent = dict(zip(w_names, q_w_outputs))
-            else:
-                latent = None
             
-            lower_bound = zs.variational.elbo(
-                log_joint, observed={'y': y_obs}, latent=latent, axis=0)
-            cost = tf.reduce_mean(lower_bound.sgvb())
-            lower_bound = tf.reduce_mean(lower_bound)
+                lower_bound = zs.variational.elbo(
+                    log_joint, observed={'y': y_obs}, latent=latent, axis=0)
+                cost = tf.reduce_mean(lower_bound.sgvb())
+                lower_bound = tf.reduce_mean(lower_bound)
+                observed.update({
+                    w_name, latent[w_name][0]) for w_name in w_names})
             
             # prediction: rms error & log likelihood
-            observed = dict((w_name, latent[w_name][0]) for w_name in w_names)
-            observed.update({'y': y_obs})
-            model, ys, reg_cost = module.p_Y_Xw(observed, X, drop_rate, n_basis,
-                    net_sizes, n_samples, task)
+            model, ys, reg_cost = module.p_Y_Xw(observed, X,
+                drop_rate, n_basis, net_sizes, n_samples, task)
             if(reg_cost is not None):
                 cost += reg_cost
             y_pred = tf.reduce_mean(ys, 0)
