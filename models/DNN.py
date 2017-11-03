@@ -31,7 +31,7 @@ def get_w_names(drop_rate, net_sizes):
 def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(X, [n_samples, 1, 1]), 1)
-        omega = zs.Normal('temp'+str(i), M, std=1.,
+        omega = zs.Normal('temp', M, std=1.,
                     n_samples=n_samples, group_ndims=2)
         for i in range(len(net_sizes)-1):
             f = tf.layers.dense(f, net_sizes[i+1],
@@ -47,9 +47,9 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
 @zs.reuse('variational')
 def var_q_w(n_basis, net_sizes, n_samples):
     with zs.BayesianNet() as variational:
-        temp_mean = tf.get_variable('temp_mean'+str(i),
+        temp_mean = tf.get_variable('temp_mean',
             shape=[], initializer=tf.constant_initializer(0.))
-        temp_logstd = tf.get_variable('omega_logstd'+str(i),
+        temp_logstd = tf.get_variable('omega_logstd',
             shape=[], initializer=tf.constant_initializer(0.))
         temp = zs.Normal('temp', temp_mean,
             logstd=temp_logstd, n_samples=n_samples, group_ndims=2)
