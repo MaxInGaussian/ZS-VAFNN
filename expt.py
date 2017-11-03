@@ -121,6 +121,10 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 observed.update({
                     (w_name, latent[w_name][0]) for w_name in w_names})
             
+            if(model_name == "DNN"):
+                cost = 0
+                lower_bound = -task_measure
+            
             # prediction: rms error & log likelihood
             model, ys, reg_cost = module.p_Y_Xw(observed, X,
                 drop_rate, n_basis, net_sizes, n_samples, task)
@@ -142,10 +146,6 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     tf.log(std_y_train)
             elif(task == "classification"):
                 log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))
-            
-            if(model_name == "DNN"):
-                cost = task_measure
-                lower_bound = -task_measure
             
             lr_ph = tf.placeholder(tf.float32, shape=[])
             global_step = tf.Variable(0, trainable=False)
