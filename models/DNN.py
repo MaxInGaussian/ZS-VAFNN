@@ -40,7 +40,9 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
             if(i < len(net_sizes)-2):
                 f = tf.nn.relu(f)
         f = tf.squeeze(f, [1])
-    return model, f, KL_V
+        if(task == "classification"):
+            f = tf.nn.softmax(f)
+    return model, f, None
 
 @zs.reuse('variational')
 def var_q_w(n_basis, net_sizes, n_samples):
