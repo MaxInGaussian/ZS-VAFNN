@@ -100,13 +100,20 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             def log_joint(observed):
                 model, _, _ = module.p_Y_Xw(observed, X, drop_rate, n_basis,
                     net_sizes, n_samples, task)
-                log_pws = model.local_log_prob(w_names)
                 log_py_xw = model.local_log_prob('y')
-                return tf.add_n(log_pws) + zs.log_mean_exp(log_py_xw, 0) * N
-            
-            var = module.var_q_w(n_basis, net_sizes, n_samples)
-            q_w_outputs = var.query(w_names, outputs=True, local_log_prob=True)
-            latent = dict(zip(w_names, q_w_outputs))
+                log_j = zs.log_mean_exp(log_py_xw, 0)*N
+                if(len(w_names)):
+                    log_pws = model.local_log_prob(w_names)
+                    log_j += tf.add_n(log_pws)
+                return log_j
+
+            if(len(w_names)):
+                var = module.var_q_w(n_basis, net_sizes, n_samples)
+                q_w_outputs = var.query(w_names,
+                    outputs=True, local_log_prob=True)
+                latent = dict(zip(w_names, q_w_outputs))
+            else:
+                latent = None
             
             lower_bound = zs.variational.elbo(
                 log_joint, observed={'y': y_obs}, latent=latent, axis=0)
@@ -136,6 +143,10 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     tf.log(std_y_train)
             elif(task == "classification"):
                 log_likelihood = tf.reduce_mean(zs.log_mean_exp(log_py_xw, 0))
+            
+            if(model_name == "DNN"):
+                cost = task_measure
+                lower_bound = -task_measure
             
             lr_ph = tf.placeholder(tf.float32, shape=[])
             global_step = tf.Variable(0, trainable=False)
