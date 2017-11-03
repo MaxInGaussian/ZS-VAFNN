@@ -24,7 +24,7 @@ import tensorflow.contrib.layers as layers
 
 
 def get_w_names(drop_rate, net_sizes):
-    w_names = ['omega'+str(i) for i in range(len(net_sizes)-2)]
+    w_names = ['temp']
     return w_names
 
 @zs.reuse('model')
@@ -42,6 +42,12 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
         f = tf.squeeze(f, [1])
         if(task == "classification"):
             f = tf.nn.softmax(f)
+        if(task == "regression"):
+            y_logstd = tf.get_variable('y_logstd', shape=[],
+                                    initializer=tf.constant_initializer(0.))
+            y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
+        elif(task == "classification"):
+            y = zs.OnehotCategorical('y', f)
     return model, f, None
 
 @zs.reuse('variational')
