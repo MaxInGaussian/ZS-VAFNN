@@ -119,7 +119,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 cost = tf.reduce_mean(lower_bound.sgvb())
                 lower_bound = tf.reduce_mean(lower_bound)
                 observed.update({
-                    w_name, latent[w_name][0]) for w_name in w_names})
+                    (w_name, latent[w_name][0]) for w_name in w_names})
             
             # prediction: rms error & log likelihood
             model, ys, reg_cost = module.p_Y_Xw(observed, X,
