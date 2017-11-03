@@ -55,7 +55,7 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
                                     initializer=tf.constant_initializer(0.))
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
         elif(task == "classification"):
-            y = zs.OnehotCategorical('y', f, n_samples=n_samples, group_ndims=1)
+            y = zs.OnehotCategorical('y', f)
     return model, f, KL_V
 
 @zs.reuse('variational')
