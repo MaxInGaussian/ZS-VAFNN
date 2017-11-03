@@ -68,6 +68,7 @@ if __name__ == '__main__':
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
+        'task': "regression",
         'save': False,
         'plot': True,
         'n_basis': 50,
@@ -92,7 +93,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'KEGG', load_data(5), **training_settings)
+        model_names, 'KEGG', train_test_set, **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
@@ -103,3 +104,16 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
         print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+    
+    '''
+    Result:
+        >>> BayesNN
+        >> rmse = 3.8680 p/m 0.4681
+        >> log_likelihood = -2.7765 p/m 0.0828
+        >>> DropoutNN
+        >> rmse = 4.3249 p/m 0.2355
+        >> log_likelihood = -2.7864 p/m 0.2238
+        >>> VAFNN
+        >> rmse = 3.4084 p/m 0.3560
+        >> log_likelihood = -2.6322 p/m 0.1433
+    '''
