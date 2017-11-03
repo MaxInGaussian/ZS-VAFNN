@@ -55,6 +55,10 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
                                     initializer=tf.constant_initializer(0.))
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
         elif(task == "classification"):
+            f_logstd = tf.get_variable('f_logstd', shape=[],
+                                    initializer=tf.constant_initializer(0.))
+            f = zs.Normal('f', f, logstd=f_logstd, group_ndims=1)
+            f = tf.nn.softmax(f)
             y = zs.OnehotCategorical('y', f)
     return model, f, KL_V
 
