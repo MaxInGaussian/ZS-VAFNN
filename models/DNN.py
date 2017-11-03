@@ -24,7 +24,7 @@ import tensorflow.contrib.layers as layers
 
 
 def get_w_names(drop_rate, net_sizes):
-    w_names = ['temp']
+    w_names = []
     return w_names
 
 @zs.reuse('model')
@@ -35,8 +35,8 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
                     n_samples=n_samples, group_ndims=2)
         for i in range(len(net_sizes)-1):
             f = tf.layers.dense(f, net_sizes[i+1],
-                kernel_regularizer=layers.l1_l2_regularizer(1e-2, 1e-2),
-                bias_regularizer=layers.l1_l2_regularizer(1e-2, 1e-2))
+                kernel_regularizer=layers.l2_regularizer(1e-2, 1e-2),
+                bias_regularizer=layers.l2_regularizer(1e-2, 1e-2))
             if(i < len(net_sizes)-2):
                 f = tf.nn.relu(f)
         f = tf.squeeze(f, [1])
