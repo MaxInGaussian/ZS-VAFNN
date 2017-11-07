@@ -61,7 +61,9 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
+    model_names = [
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCFourAct'
+    ]
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -73,14 +75,15 @@ if __name__ == '__main__':
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.5,
-        'lb_samples': 10,
-        'll_samples': 50,
+        'train_samples': 10,
+        'test_samples': 100,
+        'max_iters': 1000,
         'n_hiddens': [100, 50, 25],
-        'batch_size': 100,
-        'learn_rate': 1e-2,
-        'max_epochs': 500,
+        'batch_size': 50,
+        'learn_rate': 1e-3,
+        'max_epochs': 1000,
         'early_stop': 5,
-        'check_freq': 10,
+        'check_freq': 5,
     }
      
     for argv in sys.argv:

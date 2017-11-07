@@ -64,7 +64,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'MCFourAct'
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCFourAct'
     ]
     
     train_test_set = load_data(5)
