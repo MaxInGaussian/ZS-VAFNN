@@ -64,7 +64,7 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
+    model_names = ['DNN', 'BayesNN', 'DropoutNN', 'VAFNN']
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -76,12 +76,13 @@ if __name__ == '__main__':
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.5,
-        'lb_samples': 10,
-        'll_samples': 50,
+        'train_samples': 10,
+        'test_samples': 50,
+        'max_iters': 100,
         'n_hiddens': [50, 25],
-        'batch_size': 50,
-        'learn_rate': 1e-3,
-        'max_epochs': 500,
+        'batch_size': 10,
+        'learn_rate': 1e-2,
+        'max_epochs': 1000,
         'early_stop': 5,
         'check_freq': 10,
     }
@@ -105,8 +106,8 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> err_rate = {:.4f} p/m {:.4f}'.format(errt_mu, errt_std))
-        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+        print('>> CERR = {:.4f} \pm {:.4f}'.format(errt_mu, errt_std))
+        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
     
     '''
     Result:

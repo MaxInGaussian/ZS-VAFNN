@@ -18,7 +18,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
-sys.path.append("../")
+sys.path.append("../../")
 
 import os
 import time
@@ -63,7 +63,9 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['VAFNN', 'DropoutNN', 'BayesNN']
+    model_names = [
+        'MCFourAct'
+    ]
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -73,16 +75,17 @@ if __name__ == '__main__':
         'task': "classification",
         'save': False,
         'plot': True,
-        'drop_rate': 0.5,
-        'lb_samples': 10,
-        'll_samples': 50,
         'n_basis': 50,
-        'n_hiddens': [D//4],
-        'batch_size': 500,
-        'learn_rate': 1e-2,
-        'max_epochs': 1000,
-        'early_stop': 10,
-        'check_freq': 5,
+        'drop_rate': 0.5,
+        'train_samples': 10,
+        'test_samples': 50,
+        'max_iters': 1000,
+        'n_hiddens': [100],
+        'batch_size': 50,
+        'learn_rate': 1e-3,
+        'max_epochs': 2000,
+        'early_stop': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
@@ -95,14 +98,27 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_err_rates, eval_lls = run_experiment(
-        model_names, 'MNIST', load_data(5), **training_settings)
+        model_names, 'MNIST', train_test_set, **training_settings)
     print(eval_err_rates, eval_lls)
     
     for model_name in model_names:
-        errt_mu = np.mean(eval_rmses[model_name])
-        errt_std = np.std(eval_rmses[model_name])
+        errt_mu = np.mean(eval_err_rates[model_name])
+        errt_std = np.std(eval_err_rates[model_name])
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> err_rate = {:.4f} p/m {:.4f}'.format(errt_mu, errt_std))
-        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+        print('>> CERR = {:.4f} \pm {:.4f}'.format(errt_mu, errt_std))
+        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
+    
+    '''
+    Result:
+        >>> BayesNN
+        >> err_rate = 0.1458 p/m 0.0036
+        >> log_likelihood = -0.3113 p/m 0.0041
+        >>> DropoutNN
+        >> err_rate = 0.1539 p/m 0.0035
+        >> log_likelihood = -0.3413 p/m 0.0036
+        >>> VAFNN
+        >> err_rate = 0.1454 p/m 0.0039
+        >> log_likelihood = -0.3203 p/m 0.0052
+    '''

@@ -31,32 +31,24 @@ def get_w_names(drop_rate, net_sizes):
 def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
-        KL_V = 0
         for i in range(len(net_sizes)-1):
             f = tf.layers.dense(f, net_sizes[i+1])
             if(i < len(net_sizes)-2):
-                M = tf.get_variable('omega_mean'+str(i),
-                    shape=[1, net_sizes[i+1], n_basis],
-                    initializer=tf.constant_initializer(0.))
+                M = tf.zeros([1, net_sizes[i+1], n_basis])
                 omega = zs.Normal('omega'+str(i), M, std=1.,
                             n_samples=n_samples, group_ndims=2)
                 omega = tf.tile(omega, [1, tf.shape(X)[0], 1, 1])
-                V = tf.get_variable('omega_var'+str(i),
-                    shape=[1, 1, net_sizes[i+1], n_basis],
-                    initializer=tf.constant_initializer(0.))
-                V = tf.tile(tf.abs(V), [n_samples, tf.shape(X)[0], 1, 1])
-                expVf2 = tf.exp(-2*np.pi**2*tf.matmul(f**2, V))
                 f = tf.matmul(f, omega)/tf.sqrt(net_sizes[i+1]*1.)
-                f = tf.concat([expVf2*tf.cos(f), expVf2*tf.sin(f)], 3)
-                KL_V += tf.reduce_mean(M**2+V-tf.log(V+1e-8))
+                f = tf.concat([tf.cos(f),tf.sin(f)], 3)
         f = tf.squeeze(f, [2])
         if(task == "regression"):
             y_logstd = tf.get_variable('y_logstd', shape=[],
                                     initializer=tf.constant_initializer(0.))
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
         elif(task == "classification"):
+            f = tf.nn.softmax(f)
             y = zs.OnehotCategorical('y', f)
-    return model, f, KL_V
+    return model, f, None
 
 @zs.reuse('variational')
 def var_q_w(n_basis, net_sizes, n_samples):

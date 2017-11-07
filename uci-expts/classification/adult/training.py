@@ -105,8 +105,8 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> err_rate = {:.4f} p/m {:.4f}'.format(errt_mu, errt_std))
-        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+        print('>> CERR = {:.4f} \pm {:.4f}'.format(errt_mu, errt_std))
+        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
     
     '''
     Result:

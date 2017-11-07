@@ -62,7 +62,9 @@ if __name__ == '__main__':
     if('cpu' in sys.argv):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
-    model_names = ['BayesNN', 'DropoutNN', 'VAFNN']
+    model_names = [
+        'MCDropout', 'MCFourAct'
+    ]
     
     train_test_set = load_data(5)
     D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
@@ -74,14 +76,15 @@ if __name__ == '__main__':
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.5,
-        'lb_samples': 10,
-        'll_samples': 50,
-        'n_hiddens': [50],
+        'train_samples': 10,
+        'test_samples': 100,
+        'max_iters': 1000,
+        'n_hiddens': [50, 25],
         'batch_size': 10,
-        'learn_rate': 1e-2,
-        'max_epochs': 500,
+        'learn_rate': 1e-3,
+        'max_epochs': 1000,
         'early_stop': 5,
-        'check_freq': 10,
+        'check_freq': 5,
     }
      
     for argv in sys.argv:
@@ -103,18 +106,18 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
-        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+        print('>> RMSE = {:.4f} \pm {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> NLPD = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
     
     '''
     Result:
         >>> BayesNN
-        >> rmse = 3.8680 p/m 0.4681
-        >> log_likelihood = -2.7765 p/m 0.0828
+        >> RMSE = 3.4740 \pm 0.4435
+        >> NLPD = 2.6974 \pm 0.1334
         >>> DropoutNN
-        >> rmse = 4.3249 p/m 0.2355
-        >> log_likelihood = -2.7864 p/m 0.2238
+        >> RMSE = 3.3841 \pm 0.3789
+        >> NLPD = 2.8674 \pm 0.1207
         >>> VAFNN
-        >> rmse = 3.4084 p/m 0.3560
-        >> log_likelihood = -2.6322 p/m 0.1433
+        >> RMSE = 3.2383 \pm 0.2281
+        >> NLPD = 2.6131 \pm 0.0929
     '''

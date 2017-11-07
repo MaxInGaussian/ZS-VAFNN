@@ -102,8 +102,8 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> rmse = {:.4f} p/m {:.4f}'.format(rmse_mu, rmse_std))
-        print('>> log_likelihood = {:.4f} p/m {:.4f}'.format(ll_mu, ll_std))
+        print('>> RMSE = {:.4f} \pm {:.4f}'.format(rmse_mu, rmse_std))
+        print('>> NLPD = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
     
     '''
     Result:
