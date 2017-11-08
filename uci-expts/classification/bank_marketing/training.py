@@ -82,7 +82,7 @@ if __name__ == '__main__':
         'max_iters': 1000,
         'n_hiddens': [50, 25],
         'batch_size': 50,
-        'learn_rate': 1e-2,
+        'learn_rate': 1e-3,
         'max_epochs': 1000,
         'early_stop': 5,
         'check_freq': 5,
