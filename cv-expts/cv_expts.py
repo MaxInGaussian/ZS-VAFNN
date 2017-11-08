@@ -76,7 +76,7 @@ def save_image_collections(x, filename, shape=(10, 10), scale_each=False,
     ret = ret.squeeze()
     io.imsave(filename, ret)
 
-def run_experiment(model_names, dataset_name, train_test_set, **args):
+def gradient_ascent_attack(model_names, dataset_name, **args):
     np.random.seed(314159)
     
     # Define task
@@ -95,8 +95,6 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
     N_CLASS = 10 if 'n_class' not in args.keys() else args['n_class']
     DROP_RATE = 0.5 if 'drop_rate' not in args.keys() else args['drop_rate']
     N_SAMPLES = 500 if 'n_samples' not in args.keys() else args['n_samples']
-    MAX_ITERS = 500 if 'max_iters' not in args.keys() else args['max_iters']
-    BATCH_SIZE = 50 if 'batch_size' not in args.keys() else args['batch_size']
     MAX_EPOCHS = 2000 if 'max_epochs' not in args.keys() else args['max_epochs']
     CHECK_FREQ = 5 if 'check_freq' not in args.keys() else args['check_freq']
     EARLY_STOP = 5 if 'early_stop' not in args.keys() else args['early_stop']
