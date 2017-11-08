@@ -114,13 +114,14 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 q_w_outputs = var.query(w_names,
                     outputs=True, local_log_prob=True)
                 latent = dict(zip(w_names, q_w_outputs))
-            
-                lower_bound = zs.variational.elbo(
-                    log_joint, observed={'y': y_obs}, latent=latent, axis=0)
-                cost = tf.reduce_mean(lower_bound.sgvb())
-                lower_bound = tf.reduce_mean(lower_bound)
                 observed.update({
                     (w_name, latent[w_name][0]) for w_name in w_names})
+
+                if('VI' in model_name):  
+                    lower_bound = zs.variational.elbo(
+                        log_joint, observed={'y': y_obs}, latent=latent, axis=0)
+                    cost = tf.reduce_mean(lower_bound.sgvb())
+                    lower_bound = tf.reduce_mean(lower_bound)
             
             
             # prediction: rms error & log likelihood
@@ -298,7 +299,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                                     './trained/'+model_code+'_'+problem_name)
                             else:
                                 min_tm, max_ll = test_tm, test_ll
-                        if(cnt_cvrg > (EARLY_STOP*epoch)/MAX_EPOCHS):
+                        if(cnt_cvrg > EARLY_STOP-(epoch*EARLY_STOP/MAX_EPOCHS)):
                             break
                 
                 # Load the selected best params and evaluate its performance

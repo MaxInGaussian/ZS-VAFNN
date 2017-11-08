@@ -63,7 +63,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCFourAct'
+        'VIBayesNN', 'MCDropout', 'MCFourAct'
     ]
     
     train_test_set = load_data(5)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         'learn_rate': 1e-3,
         'max_epochs': 1000,
         'early_stop': 5,
-        'check_freq': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
@@ -111,13 +111,13 @@ if __name__ == '__main__':
     
     '''
     Result:
-        >>> BayesNN
-        >> RMSE = 3.4740 \pm 0.4435
-        >> NLPD = 2.6974 \pm 0.1334
-        >>> DropoutNN
-        >> RMSE = 3.3841 \pm 0.3789
-        >> NLPD = 2.8674 \pm 0.1207
-        >>> VAFNN
-        >> RMSE = 3.2383 \pm 0.2281
-        >> NLPD = 2.6131 \pm 0.0929
+        >>> VIBayesNN
+        >> RMSE = 3.6440 \pm 0.4527
+        >> NLPD = 2.7028 \pm 0.1410
+        >>> MCDropout
+        >> RMSE = 3.4314 \pm 0.4025
+        >> NLPD = 2.8053 \pm 0.1324
+        >>> MCFourAct
+        >> RMSE = 3.0188 \pm 0.3664
+        >> NLPD = 2.5535 \pm 0.1133
     '''

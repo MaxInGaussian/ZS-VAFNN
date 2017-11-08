@@ -70,7 +70,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCFourAct'
+        'VIBayesNN', 'MCDropout', 'MCFourAct'
     ]
     
     train_test_set = load_data(5)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         'learn_rate': 1e-3,
         'max_epochs': 1000,
         'early_stop': 5,
-        'check_freq': 5,
+        'check_freq': 10,
     }
      
     for argv in sys.argv:
