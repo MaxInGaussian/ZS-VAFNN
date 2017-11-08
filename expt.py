@@ -151,7 +151,11 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 task_measure = rms_error
             elif(task == "classification"):
                 AUC = tf.metrics.auc(labels=y, predictions=y_pred)
-                y_pred = tf.argmax(tf.reduce_sum(tf.one_hot(tf.argmax(f, 2), P), 0), 1)
+                if(model_name == "DNN"):
+                    y_pred = tf.argmax(y_pred, 1)
+                else:
+                    y_pred = tf.argmax(tf.reduce_sum(
+                        tf.one_hot(tf.argmax(f, 2), P), 0), 1)
                 sparse_y = tf.argmax(y, 1)
                 LL = AUC
                 accuracy = tf.reduce_mean(tf.cast(
