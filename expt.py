@@ -298,7 +298,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                                     './trained/'+model_code+'_'+problem_name)
                             else:
                                 min_tm, max_ll = test_tm, test_ll
-                        if(cnt_cvrg > EARLY_STOP):
+                        if(cnt_cvrg > (EARLY_STOP*epoch)/MAX_EPOCHS):
                             break
                 
                 # Load the selected best params and evaluate its performance
