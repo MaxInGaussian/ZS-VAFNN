@@ -112,13 +112,13 @@ if __name__ == '__main__':
     
     '''
     Result:
-        >>> BayesNN
-        >> rmse = 1.9604 p/m 0.0347
-        >> log_likelihood = -2.0572 p/m 0.0072
-        >>> DropoutNN
-        >> rmse = 4.2293 p/m 0.1552
-        >> log_likelihood = -2.4655 p/m 0.0179
-        >>> VAFNN
-        >> rmse = 1.2572 p/m 0.1040
-        >> log_likelihood = -1.6072 p/m 0.0678
+        >>> VIBayesNN
+        >> RMSE = 1.2027 \pm 0.1663
+        >> NLPD = 1.7166 \pm 0.1162
+        >>> MCDropout
+        >> RMSE = 2.8257 \pm 0.1219
+        >> NLPD = 2.8492 \pm 0.0089
+        >>> MCFourAct
+        >> RMSE = 0.3556 \pm 0.0520
+        >> NLPD = 0.3831 \pm 0.0856
     '''
