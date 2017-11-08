@@ -98,7 +98,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             w_names = module.get_w_names(DROP_RATE, net_sizes)    
             model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
             
-
+            cost = 0
             observed = {'y': y_obs}
             if(model_name != "DNN"):            
                 def log_joint(observed):
@@ -151,7 +151,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 task_measure = rms_error
             elif(task == "classification"):
                 AUC = tf.metrics.auc(labels=y, predictions=y_pred)
-                y_pred = tf.argmax(y_pred, 1)
+                y_pred = tf.argmax(tf.reduce_sum(tf.one_hot(tf.argmax(f, 2), P), 0), 1)
                 sparse_y = tf.argmax(y, 1)
                 LL = AUC
                 accuracy = tf.reduce_mean(tf.cast(
@@ -164,6 +164,8 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             global_step = tf.Variable(0, trainable=False)
             learn_rate_ts = tf.train.exponential_decay(
                 learn_rate_ph, global_step, 10000, 0.96, staircase=True)
+            if(model_name  == "VIBayesNN"):
+                learn_rate_ts *= 10
             optimizer = tf.train.AdamOptimizer(learn_rate_ts)
             infer_op = optimizer.minimize(cost, global_step=global_step)
         
