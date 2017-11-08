@@ -100,16 +100,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             
             cost = 0
             observed = {'y': y_obs}
-            if(model_name != "DNN"):            
-                def log_joint(observed):
-                    model, _, _ = module.p_Y_Xw(observed, X, DROP_RATE, n_basis,
-                        net_sizes, n_samples, task)
-                    log_py_xw = model.local_log_prob('y')
-                    log_j = zs.log_mean_exp(log_py_xw, 0)*N
-                    if(len(w_names)):
-                        log_pws = model.local_log_prob(w_names)
-                        log_j += tf.add_n(log_pws)
-                    return log_j
+            if(model_name != "DNN"):
                 var = module.var_q_w(n_basis, net_sizes, n_samples)
                 q_w_outputs = var.query(w_names,
                     outputs=True, local_log_prob=True)
@@ -117,12 +108,20 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 observed.update({
                     (w_name, latent[w_name][0]) for w_name in w_names})
 
-                if('VI' in model_name):  
+                if('VI' in model_name):
+                    def log_joint(observed):
+                        model, _, _ = module.p_Y_Xw(observed, X, DROP_RATE,
+                            n_basis, net_sizes, n_samples, task)
+                        log_py_xw = model.local_log_prob('y')
+                        log_j = zs.log_mean_exp(log_py_xw, 0)*N
+                        if(len(w_names)):
+                            log_pws = model.local_log_prob(w_names)
+                            log_j += tf.add_n(log_pws)
+                        return log_j
                     lower_bound = zs.variational.elbo(
                         log_joint, observed={'y': y_obs}, latent=latent, axis=0)
                     cost = tf.reduce_mean(lower_bound.sgvb())
                     lower_bound = tf.reduce_mean(lower_bound)
-            
             
             # prediction: rms error & log likelihood
             model, f, reg_cost = module.p_Y_Xw(observed, X,
