@@ -77,7 +77,7 @@ if __name__ == '__main__':
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'task': "classification",
-        'save': False,
+        'save': True,
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.5,

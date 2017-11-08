@@ -120,13 +120,13 @@ if __name__ == '__main__':
     
     '''
     Result:
->>> VIBayesNN
->> CERR = 0.4698 \pm 0.0160
->> AUC = 0.8043 \pm 0.0006
->>> MCDropout
->> CERR = 0.5479 \pm 0.0218
->> AUC = 0.8184 \pm 0.0156
->>> MCFourAct
->> CERR = 0.4192 \pm 0.0091
->> AUC = 0.8107 \pm 0.0056
+        >>> VIBayesNN
+        >> CERR = 0.4698 \pm 0.0160
+        >> AUC = 0.8043 \pm 0.0006
+        >>> MCDropout
+        >> CERR = 0.5479 \pm 0.0218
+        >> AUC = 0.8184 \pm 0.0156
+        >>> MCFourAct
+        >> CERR = 0.4192 \pm 0.0091
+        >> AUC = 0.8107 \pm 0.0056
     '''

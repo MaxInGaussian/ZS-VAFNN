@@ -81,7 +81,7 @@ if __name__ == '__main__':
         'train_samples': 10,
         'test_samples': 100,
         'max_iters': 1000,
-        'n_hiddens': [50],
+        'n_hiddens': [50, 25],
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 1000,
@@ -114,12 +114,12 @@ if __name__ == '__main__':
     '''
     Result:
         >>> VIBayesNN
-        >> RMSE = 3.6210 \pm 0.5222
-        >> NLPD = 2.7200 \pm 0.1172
+        >> RMSE = 3.7907 \pm 0.5008
+        >> NLPD = 2.7175 \pm 0.1005
         >>> MCDropout
-        >> RMSE = 3.3863 \pm 0.4019
-        >> NLPD = 2.8629 \pm 0.2042
+        >> RMSE = 3.4323 \pm 0.3722
+        >> NLPD = 2.7929 \pm 0.0894
         >>> MCFourAct
-        >> RMSE = 3.3191 \pm 0.3230
-        >> NLPD = 2.7219 \pm 0.0947
+        >> RMSE = 3.3635 \pm 0.5254
+        >> NLPD = 2.5712 \pm 0.0928
     '''

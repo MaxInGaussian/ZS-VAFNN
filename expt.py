@@ -41,6 +41,7 @@ def standardize(data_train, data_test):
 
 def run_experiment(model_names, dataset_name, train_test_set, **args):
     np.random.seed(314159)
+    tf.set_random_seed(314159)
     
     # Define task
     task = 'regression' if 'task' not in args.keys() else args['task']
