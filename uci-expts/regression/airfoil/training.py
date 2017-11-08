@@ -32,14 +32,15 @@ import zhusuan as zs
 from expt import run_experiment
 
 
-DATA_PATH = 'SkillCraft1_Dataset.csv'
+DATA_PATH = 'airfoil_self_noise.dat'
 
 def load_data(n_folds):
     np.random.seed(314159)
     import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=None, index_col=0)
+    data = pd.DataFrame.from_csv(
+        path=DATA_PATH, header=None, index_col=None, sep="[ \t^]+")
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
-    X, y = data[:, 1:], data[:, 0]
+    X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         'max_iters': 1000,
         'n_hiddens': [50, 25],
         'batch_size': 10,
-        'learn_rate': 1e-3,
+        'learn_rate': 1e-2,
         'max_epochs': 1000,
         'early_stop': 5,
         'check_freq': 5,
@@ -94,9 +95,9 @@ if __name__ == '__main__':
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
     
     print(training_settings)
-
+    
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'Skill Craft', train_test_set, **training_settings)
+        model_names, 'Airfoil', train_test_set, **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
@@ -111,12 +112,12 @@ if __name__ == '__main__':
     '''
     Result:
         >>> BayesNN
-        >> rmse = 0.9883 p/m 0.0610
-        >> log_likelihood = -1.3718 p/m 0.0204
+        >> RMSE = 3.4740 \pm 0.4435
+        >> NLPD = 2.6974 \pm 0.1334
         >>> DropoutNN
-        >> rmse = 1.0112 p/m 0.0323
-        >> log_likelihood = -1.4564 p/m 0.0081
+        >> RMSE = 3.3841 \pm 0.3789
+        >> NLPD = 2.8674 \pm 0.1207
         >>> VAFNN
-        >> rmse = 0.9330 p/m 0.0101
-        >> log_likelihood = -1.3411 p/m 0.0121
+        >> RMSE = 3.2383 \pm 0.2281
+        >> NLPD = 2.6131 \pm 0.0929
     '''

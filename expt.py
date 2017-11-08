@@ -360,9 +360,9 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     plt.ylabel('NLPD {:.4f}'.format(test_ll))
                 elif(task == "classification"):
                     plt.ylabel('AUC {:.4f}'.format(test_ll))
-                if not os.path.exists('./PLOTs/'):
-                    os.makedirs('./PLOTs/')
-                plt.savefig('./PLOTs/'+model_code+'_'+problem_name+'.png')
+                if not os.path.exists('./plots/'):
+                    os.makedirs('./plots/')
+                plt.savefig('./plots/'+model_code+'_'+problem_name+'.png')
                 plt.close()
             train_costs.append(np.array(f_train_costs))
             train_tms.append(np.array(f_train_tms))
