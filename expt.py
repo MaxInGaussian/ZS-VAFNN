@@ -131,13 +131,20 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 y_pred = f
             else:
                 y_pred, y_var = tf.nn.moments(f, axes=[0])
+                if(task == "classification"):
+                    g_mu, g_var = tf.nn.moments(f, axes=[2])
+                    g_mu = tf.expand_dims(tf.reduce_mean(g_mu, 0), 1)
+                    g_var = tf.expand_dims(tf.reduce_mean(g_var, 0), 1)
+                    y_pred = (y_pred-g_mu)/g_var**0.5
+                    y_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
             if(model_name == "DNN" or 'MC' in model_name):
                 if(task == "regression"):
                     cost = tf.losses.mean_squared_error(y_pred, y)
                 elif(task == "classification"):
-                    cost = tf.reduce_mean(
-                        tf.nn.softmax_cross_entropy_with_logits(
-                            logits=y_pred, labels=y))
+                    cost = tf.losses.mean_squared_error(y_pred, y)
+                    # cost = tf.reduce_mean(
+                    #     tf.nn.softmax_cross_entropy_with_logits(
+                    #         logits=y_pred, labels=y))
                 lower_bound = -cost
             else:
                 log_py_xw = model.local_log_prob('y')
@@ -152,11 +159,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 task_measure = rms_error
             elif(task == "classification"):
                 AUC = tf.metrics.auc(labels=y, predictions=y_pred)
-                if(model_name == "DNN"):
-                    y_pred = tf.argmax(y_pred, 1)
-                else:
-                    y_pred = tf.argmax(tf.reduce_sum(
-                        tf.one_hot(tf.argmax(f, 2), P), 0), 1)
+                y_pred = tf.argmax(y_pred, 1)
                 sparse_y = tf.argmax(y, 1)
                 LL = AUC
                 accuracy = tf.reduce_mean(tf.cast(
@@ -173,10 +176,13 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 learn_rate_ts *= 10
             optimizer = tf.train.AdamOptimizer(learn_rate_ts)
             infer_op = optimizer.minimize(cost, global_step=global_step)
-        
-            params = tf.trainable_variables()
-            for i in params:
-                print(i.name, i.get_shape())
+    
+            save_vars = {}
+            for var in tf.trainable_variables():
+                print(var.name, var.get_shape())
+                save_vars[var.name] = var
+            saver = tf.train.Saver(save_vars)
+            save_path = './trained/'+model_code+'_'+dataset_name+'.ckpt'
         
             # Run the inference
             def get_batch(t, iters):
@@ -292,11 +298,9 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                             cnt_cvrg = 0
                             best_cost = train_cost
                             if(SAVE):
-                                saver = tf.train.saver()
                                 if not os.path.exists('./trained/'):
                                     os.makedirs('./trained/')
-                                saver.SAVE(sess,
-                                    './trained/'+model_code+'_'+problem_name)
+                                saver.save(sess, save_path)
                             else:
                                 min_tm, max_ll = test_tm, test_ll
                         if(cnt_cvrg > EARLY_STOP-(epoch*EARLY_STOP/MAX_EPOCHS)):
@@ -304,9 +308,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 
                 # Load the selected best params and evaluate its performance
                 if(SAVE):
-                    saver = tf.train.saver()
-                    saver.restore(sess,
-                        './trained/'+model_code+'_'+problem_name)
+                    saver.restore(sess, save_path)
                     tms, lls = [], []
                     t_iters = int(np.floor(X_test.shape[0]/float(BATCH_SIZE)))
                     for t in range(t_iters):
@@ -316,11 +318,11 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         else:
                             X_batch = X_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
                             y_batch = y_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                        mse, ll = sess.run(
-                            [rms_error, LL],
+                        tm, ll = sess.run(
+                            [task_measure, LL],
                             feed_dict={n_samples: TEST_SAMPLES,
                                 X: X_batch, y: y_batch})
-                        tms.append(mse);lls.append(ll)
+                        tms.append(tm);lls.append(ll)
                     test_tm, test_ll = np.mean(tms), np.mean(lls)
                 else:
                     test_tm, test_ll = min_tm, max_ll
@@ -330,7 +332,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     print('>> Test NLPD = {:.8f}'.format(test_ll))
                 elif(task == "classification"):
                     print('>> Test Err Rate = {:.8f}'.format(test_tm))
-                    print('>> Test NLPD = {:.8f}'.format(test_ll))
+                    print('>> Test AUC = {:.8f}'.format(test_ll))
                 eval_tms[model_name].append(test_tm)
                 eval_lls[model_name].append(test_ll)
             if(PLOT):

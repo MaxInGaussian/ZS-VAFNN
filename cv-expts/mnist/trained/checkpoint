@@ -1,0 +1,2 @@
+model_checkpoint_path: "DNN{784,100,10}_MNIST"
+all_model_checkpoint_paths: "DNN{784,100,10}_MNIST"

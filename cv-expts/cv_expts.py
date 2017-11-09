@@ -100,10 +100,8 @@ def gradient_ascent_attack(model_names, dataset_name, **args):
     EARLY_STOP = 5 if 'early_stop' not in args.keys() else args['early_stop']
     LEARN_RATE = 1e-3 if 'learn_rate' not in args.keys() else args['learn_rate']
     
-    net_sizes = [IMG_W*IMG_H*N_CHANNELS]+n_hiddens+[N_CLASS]
-    
-    iters = int(np.floor(N/float(BATCH_SIZE)))
-    t_iters = int(np.floor(T/float(BATCH_SIZE)))
+    D, N, P = IMG_W*IMG_H*N_CHANNELS, N_GEN_IMGS, N_CLASS
+    net_sizes = [D]+n_hiddens+[P]
 
     # Build the computation graph
     n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
@@ -133,8 +131,7 @@ def gradient_ascent_attack(model_names, dataset_name, **args):
             y_pred = f
         else:
             y_pred, y_var = tf.nn.moments(f, axes=[0])
-        cost = -tf.reduce_mean(y_pred[:, GEN_CLASS])+tf.reduce_mean(
-            y_pred[:, np.setdiff1d(np.arange(P), [GEN_CLASS])])
+        cost = -tf.reduce_mean(y_pred[:, GEN_CLASS])
         if(model_name != "DNN"):
             cost += tf.reduce_mean(y_var[:, GEN_CLASS])
         
@@ -148,12 +145,16 @@ def gradient_ascent_attack(model_names, dataset_name, **args):
         infer_op = optimizer.minimize(cost,
             var_list=[X], global_step=global_step)
     
+        restore_vars = {}
+        for var in tf.trainable_variables():
+            if(var.name != 'X'):
+                restore_vars[var.name] = var
+    
         # Run the inference
         with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
-            sess.run(tf.local_variables_initializer())
-            saver = tf.train.saver()
-            saver.restore(sess, './trained/'+model_code+'_'+problem_name)
+            X.initializer.run()
+            saver = tf.train.Saver(restore_vars)
+            saver.restore(sess, './trained/'+model_code+'_'+dataset_name)
             for epoch in range(MAX_EPOCHS):
                 flag_cvrg = True
                 time_epoch = -time.time()

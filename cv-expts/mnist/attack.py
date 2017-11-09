@@ -34,7 +34,6 @@ import six
 import gzip
 from six.moves import cPickle as pickle
 
-from expt import run_experiment
 from cv_expts import gradient_ascent_attack
 
 
@@ -66,7 +65,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'MCFourAct'
+        'DNN'
     ]
     
     train_test_set = load_data(1)
@@ -74,55 +73,23 @@ if __name__ == '__main__':
     T, P = train_test_set[0][-1].shape
     print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
     
-    # Fair Model Comparison - Same Architecture & Optimization Rule
-    training_settings = {
-        'task': "classification",
-        'save': True,
-        'plot': True,
+    # Adversarial Attack 
+    gen_img_settings = {
+        'img_w': 28,
+        'img_h': 28,
+        'n_channels': 1,
+        'n_gen_imgs': 10,
+        'gen_class': 0,
+        'n_class': P,
         'n_basis': 50,
         'drop_rate': 0.5,
-        'train_samples': 10,
-        'test_samples': 50,
-        'max_iters': 500,
+        'n_samples': 10,
+        'max_iters': 1000,
         'n_hiddens': [100],
-        'batch_size': 50,
         'learn_rate': 1e-3,
         'max_epochs': 1000,
         'early_stop': 5,
-        'check_freq': 10,
+        'check_freq': 5,
     }
-     
-    for argv in sys.argv:
-        if('--' == argv[:2] and '=' in argv):
-            eq_ind = argv.index('=')
-            setting_feature = argv[2:eq_ind]
-            if(setting_feature in ['save', 'plot']):
-                training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
     
-    print(training_settings)
-
-    eval_err_rates, eval_lls = run_experiment(
-        model_names, 'MNIST', train_test_set, **training_settings)
-    print(eval_err_rates, eval_lls)
-    
-    for model_name in model_names:
-        errt_mu = np.mean(eval_err_rates[model_name])
-        errt_std = np.std(eval_err_rates[model_name])
-        ll_mu = np.mean(eval_lls[model_name])
-        ll_std = np.std(eval_lls[model_name])
-        print('>>> '+model_name)
-        print('>> CERR = {:.4f} \pm {:.4f}'.format(errt_mu, errt_std))
-        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
-    
-    '''
-    Result:
-        >>> BayesNN
-        >> err_rate = 0.1458 p/m 0.0036
-        >> log_likelihood = -0.3113 p/m 0.0041
-        >>> DropoutNN
-        >> err_rate = 0.1539 p/m 0.0035
-        >> log_likelihood = -0.3413 p/m 0.0036
-        >>> VAFNN
-        >> err_rate = 0.1454 p/m 0.0039
-        >> log_likelihood = -0.3203 p/m 0.0052
-    '''
+    gradient_ascent_attack(model_names, 'MNIST', **gen_img_settings)
