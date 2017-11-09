@@ -101,7 +101,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             
             cost = 0
             observed = {'y': y_obs}
-            if(model_name != "DNN"):
+            if(len(w_names) > 0):
                 var = module.var_q_w(n_basis, net_sizes, n_samples)
                 q_w_outputs = var.query(w_names,
                     outputs=True, local_log_prob=True)
@@ -138,13 +138,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     y_pred = (y_pred-g_mu)/g_var**0.5
                     y_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
             if(model_name == "DNN" or 'MC' in model_name):
-                if(task == "regression"):
-                    cost = tf.losses.mean_squared_error(y_pred, y)
-                elif(task == "classification"):
-                    cost = tf.losses.mean_squared_error(y_pred, y)
-                    # cost = tf.reduce_mean(
-                    #     tf.nn.softmax_cross_entropy_with_logits(
-                    #         logits=y_pred, labels=y))
+                cost = tf.losses.mean_squared_error(y_pred, y)
                 lower_bound = -cost
             else:
                 log_py_xw = model.local_log_prob('y')

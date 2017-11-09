@@ -40,7 +40,6 @@ def load_data(n_folds):
     data = pd.DataFrame.from_csv(
         path=DATA_PATH, header=None, index_col=None, sep=",")
     data = data.sample(frac=1).dropna(axis=0)
-    print(pd.get_dummies(data).head())
     data = pd.get_dummies(data).as_matrix()
     X, y = data[:, :-2].astype(np.float32), data[:, -2:].astype(np.int32)
     n_data = y.shape[0]
@@ -65,7 +64,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'VIBayesNN', 'MCDropout', 'MCFourAct'
+        'MCFourAct', 'MCDropout', 'VIBayesNN'
     ]
     
     train_test_set = load_data(5)
@@ -97,9 +96,8 @@ if __name__ == '__main__':
             setting_feature = argv[2:eq_ind]
             if(setting_feature in ['save', 'plot']):
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
-    
     print(training_settings)
-
+    
     eval_err_rates, eval_lls = run_experiment(
         model_names, 'Adult', train_test_set, **training_settings)
     print(eval_err_rates, eval_lls)
