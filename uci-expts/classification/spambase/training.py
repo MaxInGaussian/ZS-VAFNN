@@ -69,7 +69,9 @@ if __name__ == '__main__':
     ]
     
     train_test_set = load_data(5)
-    D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
+    N, D = train_test_set[0][0].shape
+    T, P = train_test_set[0][-1].shape
+    print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
@@ -113,13 +115,13 @@ if __name__ == '__main__':
     
     '''
     Result:
-        >>> BayesNN
-        >> err_rate = 0.0667 p/m 0.0022
-        >> log_likelihood = -0.1948 p/m 0.0044
-        >>> DropoutNN
-        >> err_rate = 0.0507 p/m 0.0047
-        >> log_likelihood = -0.1830 p/m 0.0090
-        >>> VAFNN
-        >> err_rate = 0.0720 p/m 0.0061
-        >> log_likelihood = -0.2009 p/m 0.0238
+        >>> VIBayesNN
+        >> CERR = 0.0711 \pm 0.0048
+        >> AUC = 0.9680 \pm 0.0006
+        >>> MCDropout
+        >> CERR = 0.0815 \pm 0.0043
+        >> AUC = 0.9591 \pm 0.0019
+        >>> MCFourAct
+        >> CERR = 0.0665 \pm 0.0044
+        >> AUC = 0.9665 \pm 0.0014
     '''

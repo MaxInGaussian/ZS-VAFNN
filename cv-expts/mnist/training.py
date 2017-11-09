@@ -18,6 +18,7 @@ from __future__ import print_function
 from __future__ import division
 
 import sys
+sys.path.append("../")
 sys.path.append("../../")
 
 import os
@@ -34,6 +35,7 @@ import gzip
 from six.moves import cPickle as pickle
 
 from expt import run_experiment
+from cv_expts from gradient_ascent_attack
 
 
 DATA_PATH = 'mnist.pkl.gz'
@@ -67,19 +69,21 @@ if __name__ == '__main__':
         'VIBayesNN', 'MCDropout', 'MCFourAct'
     ]
     
-    train_test_set = load_data(5)
-    D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
+    train_test_set = load_data(1)
+    N, D = train_test_set[0][0].shape
+    T, P = train_test_set[0][-1].shape
+    print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
         'task': "classification",
-        'save': False,
+        'save': True,
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.5,
         'train_samples': 10,
         'test_samples': 50,
-        'max_iters': 1000,
+        'max_iters': 500,
         'n_hiddens': [100],
         'batch_size': 50,
         'learn_rate': 1e-3,
@@ -122,3 +126,24 @@ if __name__ == '__main__':
         >> err_rate = 0.1454 p/m 0.0039
         >> log_likelihood = -0.3203 p/m 0.0052
     '''
+    
+    # Adversarial Attack 
+    gen_img_settings = {
+        'img_w': 28,
+        'img_h': 28,
+        'n_channels': 1,
+        'n_gen_imgs': 10,
+        'gen_class': 0,
+        'n_class': P,
+        'n_basis': 50,
+        'drop_rate': 0.5,
+        'n_samples': 10,
+        'max_iters': 1000,
+        'n_hiddens': [100],
+        'learn_rate': 1e-3,
+        'max_epochs': 1000,
+        'early_stop': 5,
+        'check_freq': 5,
+    }
+    
+    gradient_ascent_attack(model_names, 'MNIST', **gen_img_settings)

@@ -67,7 +67,9 @@ if __name__ == '__main__':
     ]
     
     train_test_set = load_data(5)
-    D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
+    N, D = train_test_set[0][0].shape
+    T, P = train_test_set[0][-1].shape
+    print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
     training_settings = {
@@ -111,13 +113,13 @@ if __name__ == '__main__':
     
     '''
     Result:
-        >>> BayesNN
-        >> RMSE = 3.4740 \pm 0.4435
-        >> NLPD = 2.6974 \pm 0.1334
-        >>> DropoutNN
-        >> RMSE = 3.3841 \pm 0.3789
-        >> NLPD = 2.8674 \pm 0.1207
-        >>> VAFNN
-        >> RMSE = 3.2383 \pm 0.2281
-        >> NLPD = 2.6131 \pm 0.0929
+        >>> VIBayesNN
+        >> RMSE = 2.5228 \pm 0.1789
+        >> NLPD = 2.3834 \pm 0.1907
+        >>> MCDropout
+        >> RMSE = 3.4465 \pm 0.2088
+        >> NLPD = 2.9494 \pm 0.0711
+        >>> MCFourAct
+        >> RMSE = 1.5386 \pm 0.1444
+        >> NLPD = 1.9289 \pm 0.1316
     '''
