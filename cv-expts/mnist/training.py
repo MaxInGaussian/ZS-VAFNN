@@ -55,9 +55,9 @@ def load_data(n_folds):
     X_train, y_train = train_set[0], train_set[1]
     X_valid, y_valid = valid_set[0], valid_set[1]
     X_test, y_test = test_set[0], test_set[1]
-    X_train = np.vstack([X_train, X_valid]).astype('float32')
-    y_train = np.concatenate([y_train, y_valid])
-    return [[X_train, to_one_hot(y_train, 10), X_test, to_one_hot(y_test, 10)]]
+    return [[X_train, to_one_hot(y_train, 10),
+        X_valid, to_one_hot(y_valid, 10),
+        X_test, to_one_hot(y_test, 10)]]
 
 
 if __name__ == '__main__':
@@ -69,9 +69,9 @@ if __name__ == '__main__':
         'DNN', 'MCFourAct'
     ]
     
-    train_test_set = load_data(1)
-    N, D = train_test_set[0][0].shape
-    T, P = train_test_set[0][-1].shape
+    dataset = load_data(1)
+    N, D = dataset[0][0].shape
+    T, P = dataset[0][-1].shape
     print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_err_rates, eval_lls = run_experiment(
-        model_names, 'MNIST', train_test_set, **training_settings)
+        model_names, 'MNIST', dataset, **training_settings)
     print(eval_err_rates, eval_lls)
     
     for model_name in model_names:
@@ -111,8 +111,8 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> CERR = {:.4f} \pm {:.4f}'.format(errt_mu, errt_std))
-        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
+        print('>> ERRT = {:.4f} \pm {:.4f}'.format(errt_mu, 1.96*errt_std))
+        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, 1.96*ll_std))
     
     '''
     Result:

@@ -45,17 +45,22 @@ def load_data(n_folds):
     n_data = y.shape[0]
     n_partition = n_data//n_folds
     n_train = n_partition*(n_folds-1)
-    train_test_set = []
-    for fold in range(n_folds):
-        if(fold == n_folds-1):
-            test_inds = np.arange(n_data)[fold*n_partition:]
+    dataset, folds = [], []
+    for i in range(n_folds):
+        if(i == n_folds-1):
+            fold_inds = np.arange(n_data)[i*n_partition:]
         else:
-            test_inds = np.arange(n_data)[fold*n_partition:(fold+1)*n_partition]
-        train_inds = np.setdiff1d(range(n_data), test_inds)
-        X_train, y_train = X[train_inds], y[train_inds]
-        X_test, y_test = X[test_inds], y[test_inds]
-        train_test_set.append([X_train, y_train, X_test, y_test])
-    return train_test_set
+            fold_inds = np.arange(n_data)[i*n_partition:(i+1)*n_partition]
+        folds.append([X[fold_inds], y[fold_inds]])
+    for i in range(n_folds):
+        valid_fold, test_fold = i, (i+1)%n_folds
+        train_folds = np.setdiff1d(np.arange(n_folds), [test_fold, valid_fold])
+        X_train = np.vstack([folds[fold][0] for fold in train_folds])
+        y_train = np.vstack([folds[fold][1] for fold in train_folds])
+        X_valid, y_valid = folds[valid_fold]
+        X_test, y_test = folds[test_fold]
+        dataset.append([X_train, y_train, X_valid, y_valid, X_test, y_test])
+    return dataset
 
 
 if __name__ == '__main__':
@@ -64,12 +69,12 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'VIBayesNN', 'MCDropout', 'MCFourAct'
+        'DNN', 'VIBayesNN', 'VIFourAct', 'MCDropout', 'MCFourAct'
     ]
     
-    train_test_set = load_data(5)
-    N, D = train_test_set[0][0].shape
-    T, P = train_test_set[0][-1].shape
+    dataset = load_data(5)
+    N, D = dataset[0][0].shape
+    T, P = dataset[0][-1].shape
     print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
     
     # Fair Model Comparison - Same Architecture & Optimization Rule
@@ -100,7 +105,7 @@ if __name__ == '__main__':
     print(training_settings)
 
     eval_err_rates, eval_lls = run_experiment(
-        model_names, 'Bank Marketing', train_test_set, **training_settings)
+        model_names, 'Bank Marketing', dataset, **training_settings)
     print(eval_err_rates, eval_lls)
     
     for model_name in model_names:
@@ -109,18 +114,18 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> CERR = {:.4f} \pm {:.4f}'.format(errt_mu, errt_std))
-        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, ll_std))
+        print('>> ERRT = {:.4f} \pm {:.4f}'.format(errt_mu, 1.96*errt_std))
+        print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, 1.96*ll_std))
     
     '''
     Result:
         >>> VIBayesNN
-        >> CERR = 0.0848 p/m 0.0016
+        >> ERRT = 0.0848 p/m 0.0016
         >> AUC = 0.9780 p/m 0.0002
         >>> MCDropout
-        >> CERR = 0.0881 p/m 0.0024
+        >> ERRT = 0.0881 p/m 0.0024
         >> AUC = 0.9605 p/m 0.0015
         >>> MCFourAct
-        >> CERR = 0.0866 p/m 0.0013
+        >> ERRT = 0.0866 p/m 0.0013
         >> AUC = 0.9684 p/m 0.0013
     '''

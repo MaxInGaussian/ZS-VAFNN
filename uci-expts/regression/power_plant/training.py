@@ -32,14 +32,15 @@ import zhusuan as zs
 from expt import run_experiment
 
 
-DATA_PATH = 'CASP.csv'
+DATA_PATH = 'data.txt'
 
 def load_data(n_folds):
     np.random.seed(314159)
     import pandas as pd
-    data = pd.DataFrame.from_csv(path=DATA_PATH, header=0, index_col=None)
+    data = pd.DataFrame.from_csv(
+        path=DATA_PATH, header=None, index_col=None, sep="[ \t^]+")
     data = data.sample(frac=1).dropna(axis=0).as_matrix().astype(np.float32)
-    X, y = data[:, 1:], data[:, 0]
+    X, y = data[:, :-1], data[:, -1]
     y = y[:, None]
     n_data = y.shape[0]
     n_partition = n_data//n_folds
@@ -85,8 +86,8 @@ if __name__ == '__main__':
         'train_samples': 10,
         'test_samples': 100,
         'max_iters': 1000,
-        'n_hiddens': [100, 50, 25],
-        'batch_size': 50,
+        'n_hiddens': [50, 25],
+        'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 1000,
         'early_stop': 5,
@@ -101,9 +102,9 @@ if __name__ == '__main__':
                 training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
     
     print(training_settings)
-
+    
     eval_rmses, eval_lls = run_experiment(
-        model_names, 'Protein', dataset, **training_settings)
+        model_names, 'Power Plant', dataset, **training_settings)
     print(eval_rmses, eval_lls)
     
     for model_name in model_names:
@@ -117,13 +118,13 @@ if __name__ == '__main__':
     
     '''
     Result:
-        >>> BayesNN
-        >> rmse = 4.9268 p/m 0.0269
-        >> log_likelihood = -2.6325 p/m 0.0030
-        >>> DropoutNN
-        >> rmse = 4.6080 p/m 0.0340
-        >> log_likelihood = -2.7658 p/m 0.0525
-        >>> VAFNN
-        >> rmse = 4.7026 p/m 0.0954
-        >> log_likelihood = -2.5711 p/m 0.0340
+        >>> VIBayesNN
+        >> RMSE = 3.6585 \pm 0.5116
+        >> NLPD = 2.6769 \pm 0.1125
+        >>> MCDropout
+        >> RMSE = 3.5181 \pm 0.3131
+        >> NLPD = 2.7964 \pm 0.1382
+        >>> MCFourAct
+        >> RMSE = 2.9877 \pm 0.1321
+        >> NLPD = 2.5831 \pm 0.1345
     '''

@@ -53,5 +53,6 @@ def var_q_w(n_basis, net_sizes, n_samples):
         for i in range(len(net_sizes)-1):
             w_p = tf.get_variable('w_p'+str(i), shape=[1, 1, net_sizes[i+1]],
                 initializer=tf.constant_initializer(0.5))
-            zs.Bernoulli('w'+str(i), w_p, n_samples=n_samples, group_ndims=2)
+            zs.Bernoulli('w'+str(i), w_p, n_samples=n_samples, group_ndims=2,
+                      use_path_derivative=True)
     return variational

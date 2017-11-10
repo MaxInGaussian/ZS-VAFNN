@@ -58,5 +58,6 @@ def var_q_w(n_basis, net_sizes, n_samples):
                 shape=[1, net_sizes[i]+1, net_sizes[i+1]],
                 initializer=tf.constant_initializer(0.))
             zs.Normal('w' + str(i), w_mean, logstd=w_logstd,
-                      n_samples=n_samples, group_ndims=2)
+                      n_samples=n_samples, group_ndims=2,
+                      use_path_derivative=True)
     return variational
