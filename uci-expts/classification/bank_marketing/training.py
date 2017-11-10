@@ -114,13 +114,13 @@ if __name__ == '__main__':
     
     '''
     Result:
-        >>> BayesNN
-        >> err_rate = 0.0865 p/m 0.0024
-        >> log_likelihood = -0.1837 p/m 0.0015
-        >>> DropoutNN
-        >> err_rate = 0.0863 p/m 0.0024
-        >> log_likelihood = -0.2301 p/m 0.0109
-        >>> VAFNN
-        >> err_rate = 0.0900 p/m 0.0030
-        >> log_likelihood = -0.1982 p/m 0.0035
+        >>> VIBayesNN
+        >> CERR = 0.0848 p/m 0.0016
+        >> AUC = 0.9780 p/m 0.0002
+        >>> MCDropout
+        >> CERR = 0.0881 p/m 0.0024
+        >> AUC = 0.9605 p/m 0.0015
+        >>> MCFourAct
+        >> CERR = 0.0866 p/m 0.0013
+        >> AUC = 0.9684 p/m 0.0013
     '''

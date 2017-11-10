@@ -113,12 +113,12 @@ if __name__ == '__main__':
     '''
     Result:
         >>> VIBayesNN
-        >> RMSE = 0.0358 \pm 0.0009
-        >> NLPD = -3.1352 \pm 1.1337
+        >> RMSE = 0.0354 \pm 0.0009
+        >> NLPD = -3.4885 \pm 0.1019
         >>> MCDropout
-        >> RMSE = 0.0536 \pm 0.0009
-        >> NLPD = -1.3201 \pm 0.0165
+        >> RMSE = 0.0533 \pm 0.0009
+        >> NLPD = -1.3233 \pm 0.0226
         >>> MCFourAct
-        >> RMSE = 0.0281 \pm 0.0008
-        >> NLPD = -1.4990 \pm 0.1768
+        >> RMSE = 0.0285 \pm 0.0010
+        >> NLPD = -1.5357 \pm 0.1701
     '''

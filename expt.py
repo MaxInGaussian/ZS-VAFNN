@@ -30,16 +30,17 @@ import numpy as np
 import zhusuan as zs
 
 
-def standardize(data_train, data_test):
+def standardize(data_train, data_valid, data_test):
     std = np.std(data_train, 0, keepdims=True)
     std[std == 0] = 1
     mean = np.mean(data_train, 0, keepdims=True)
-    data_train_standardized = (data_train - mean)/std
-    data_test_standardized = (data_test - mean)/std
+    train_standardized = (data_train - mean)/std
+    valid_standardized = (data_test - mean)/std
+    test_standardized = (data_test - mean)/std
     mean, std = np.squeeze(mean, 0), np.squeeze(std, 0)
-    return data_train_standardized, data_test_standardized, mean, std
+    return train_standardized, valid_standardized, test_standardized, mean, std
 
-def run_experiment(model_names, dataset_name, train_test_set, **args):
+def run_experiment(model_names, dataset_name, dataset, **args):
     np.random.seed(314159)
     tf.set_random_seed(314159)
     
@@ -63,26 +64,28 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
     EARLY_STOP = 5 if 'early_stop' not in args.keys() else args['early_stop']
     LEARN_RATE = 1e-3 if 'learn_rate' not in args.keys() else args['learn_rate']
     
-    D, P = train_test_set[0][0].shape[1], train_test_set[0][1].shape[1]
+    D, P = dataset[0][0].shape[1], dataset[0][1].shape[1]
     net_sizes = [D]+n_hiddens+[P]
     
     min_tm, max_nll = np.Infinity, -np.Infinity
     eval_tms = {model_name:[] for model_name in model_names}
     eval_lls = {model_name:[] for model_name in model_names}
-    train_costs, train_tms, train_lls = [], [], []
+    valid_costs, valid_tms, valid_lls = [], [], []
     test_costs, test_tms, test_lls = [], [], []
-    for fold, (X_train, y_train, X_test, y_test) in enumerate(train_test_set):
-    
+    for fold in range(len(dataset)):
+        
+        X_train, y_train, X_valid, y_valid, X_test, y_test = dataset[fold]
         problem_name = dataset_name.replace(' ', '_')+'_'+str(fold+1)
-        N, T = X_train.shape[0], X_test.shape[0]
-        iters = int(np.floor(N/float(BATCH_SIZE)))
-        t_iters = int(np.floor(T/float(BATCH_SIZE)))
+        N, M, T = X_train.shape[0], X_valid.shape[0], X_test.shape[0]
+        train_iters = int(np.floor(N/float(BATCH_SIZE)))
+        valid_iters = int(np.floor(M/float(BATCH_SIZE)))
+        test_iters = int(np.floor(T/float(BATCH_SIZE)))
     
         # Standardize data
-        X_train, X_test, _, _ = standardize(X_train, X_test)
+        X_train, X_valid, X_test, _, _ = standardize(X_train, X_valid, X_test)
         if(task == "regression"):
-            y_train, y_test, mean_y_train, std_y_train =\
-                standardize(y_train, y_test)
+            y_train, y_valid, y_test, mean_y_train, std_y_train =\
+                standardize(y_train, y_valid, y_test)
     
         # Build the computation graph
         n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
@@ -150,7 +153,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         y-y_pred)**2)/y_var)+0.5*np.log(2*np.pi)
                     LL = NLPD
                 rms_error = tf.sqrt(tf.reduce_mean((y_pred - y)**2))*std_y_train
-                task_measure = rms_error
+                task_measure = tf.reduce_mean(rms_error)
             elif(task == "classification"):
                 AUC = tf.metrics.auc(labels=y, predictions=y_pred)
                 y_pred = tf.argmax(y_pred, 1)
@@ -167,32 +170,41 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
             learn_rate_ts = tf.train.exponential_decay(
                 learn_rate_ph, global_step, 10000, 0.96, staircase=True)
             if(model_name  == "VIBayesNN"):
-                learn_rate_ts *= 10
+                learn_rate_ts *= 5
             optimizer = tf.train.AdamOptimizer(learn_rate_ts)
             infer_op = optimizer.minimize(cost, global_step=global_step)
-    
-            save_vars = {}
-            for var in tf.trainable_variables():
-                print(var.name, var.get_shape())
-                save_vars[var.name] = var
-            saver = tf.train.Saver(save_vars)
-            save_path = './trained/'+model_code+'_'+dataset_name+'.ckpt'
-        
+            
+            if(SAVE):
+                save_vars = {}
+                for var in tf.trainable_variables():
+                    print(var.name, var.get_shape())
+                    save_vars[var.name] = var
+                saver = tf.train.Saver(save_vars)
+                save_path = './trained/'+model_code+'_'+dataset_name+'.ckpt'
+            else:
+                save_vars = []
+                for var in tf.trainable_variables():
+                    save_vars.append(tf.Variable(var.initialized_value()))
+                assign_to_save, assign_to_restore = [], []
+                for var, save_var in zip(tf.trainable_variables(), save_vars):
+                    assign_to_save.append(save_var.assign(var))
+                    assign_to_restore.append(var.assign(save_var))
+                    
             # Run the inference
-            def get_batch(t, iters):
+            def get_batch(X, y, t, iters):
                 if(iters <= MAX_ITERS):
                     if(t == iters-1):                        
-                        X_batch = X_train[t*BATCH_SIZE:]
-                        y_batch = y_train[t*BATCH_SIZE:]
+                        X_batch = X[t*BATCH_SIZE:]
+                        y_batch = y[t*BATCH_SIZE:]
                     else:
-                        X_batch = X_train[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                        y_batch = y_train[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                        X_batch = X[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                        y_batch = y[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
                 else:
                     inds = np.random.choice(range(N), BATCH_SIZE, replace=False)
-                    X_batch, y_batch = X_train[inds], y_train[inds]
+                    X_batch, y_batch = X[inds], y[inds]
                 return X_batch, y_batch
             best_epoch, best_cost, cnt_cvrg, flag_cvrg = 0, np.Infinity, 0, True
-            f_train_costs, f_train_tms, f_train_lls = [], [], []
+            f_valid_costs, f_valid_tms, f_valid_lls = [], [], []
             f_test_costs, f_test_tms, f_test_lls = [], [], []
             with tf.Session() as sess:
                 sess.run(tf.global_variables_initializer())
@@ -201,8 +213,9 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     flag_cvrg = True
                     time_epoch = -time.time()
                     costs = []
-                    for t in range(min(MAX_ITERS, iters)):
-                        X_batch, y_batch = get_batch(t, iters)
+                    for iter in range(min(MAX_ITERS, train_iters)):
+                        X_batch, y_batch = get_batch(
+                            X_train, y_train, iter, train_iters)
                         _, c = sess.run(
                             [infer_op, cost],
                             feed_dict={n_samples: TRAIN_SAMPLES,
@@ -213,59 +226,43 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     train_cost =  np.mean(costs)
                     print('Epoch {} ({:.1f}s, {}): Cost = {:.8f}'.format(
                         epoch, time_epoch, cnt_cvrg, train_cost))
-                    if(best_cost > train_cost):
-                        flag_cvrg = False
                     if epoch % CHECK_FREQ == 0 and epoch > 0:
                         costs, tms, lls = [], [], []
-                        time_train = -time.time()
-                        for t in range(iters):
-                            if(t == iters-1):                        
-                                X_batch = X_train[t*BATCH_SIZE:]
-                                y_batch = y_train[t*BATCH_SIZE:]
-                            else:
-                                X_batch = X_train[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                                y_batch = y_train[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                        time_valid = -time.time()
+                        for iter in range(min(MAX_ITERS, valid_iters)):
+                            X_batch, y_batch = get_batch(
+                                X_valid, y_valid, iter, valid_iters)
                             c, tm, ll = sess.run([cost, task_measure, LL],
-                                feed_dict={n_samples: TRAIN_SAMPLES,
+                                feed_dict={n_samples: TEST_SAMPLES,
                                     X: X_batch, y: y_batch})
                             costs.append(c);tms.append(tm);lls.append(ll)
-                        train_cost, train_tm, train_ll =\
+                        valid_cost, valid_tm, valid_ll =\
                             np.mean(costs), np.mean(tms), np.mean(lls)
-                        time_train += time.time()
-                        if(len(f_train_costs)==0):
-                            f_train_costs.append(train_cost)
-                            f_train_tms.append(train_tm)
-                            f_train_lls.append(train_ll)
+                        time_valid += time.time()
+                        if(len(f_valid_costs)==0):
+                            f_valid_costs.append(valid_cost)
+                            f_valid_tms.append(valid_tm)
+                            f_valid_lls.append(valid_ll)
                         else:
-                            f_train_costs.append(train_cost)
-                            f_train_tms.append(train_tm)
-                            f_train_lls.append(train_ll)
+                            f_valid_costs.append(valid_cost)
+                            f_valid_tms.append(valid_tm)
+                            f_valid_lls.append(valid_ll)
                         print('>>>', model_code, '>>>', problem_name)
-                        print('>>> TRAIN ({:.1f}s) - best_cost = {:.8f}'.format(
-                            time_train, best_cost))
-                        print('>> Train lower bound = {:.8f}'.format(train_cost))
+                        print('>>>> Validation ({:.1f}s) - best = {:.8f}'.format(
+                            time_valid, best_cost))
+                        print('>> Valid Cost = {:.8f}'.format(valid_cost))
                         if(task == "regression"):
-                            print('>> Train RMSE = {:.8f}'.format(train_tm))
-                            print('>> Train NLPD = {:.8f}'.format(train_ll))
+                            print('>> Valid RMSE = {:.8f}'.format(valid_tm))
+                            print('>> Valid NLPD = {:.8f}'.format(valid_ll))
                         elif(task == "classification"):
-                            print('>> Train Err Rate = {:.8f}'.format(train_tm))
-                            print('>> Train AUC = {:.8f}'.format(train_ll))
+                            print('>> Valid Err Rate = {:.8f}'.format(valid_tm))
+                            print('>> Valid AUC = {:.8f}'.format(valid_ll))
                         costs, tms, lls = [], [], []
                         time_test = -time.time()
-                        for t in range(t_iters):
-                            if(t == t_iters-1):                   
-                                X_batch = X_test[t*BATCH_SIZE:]
-                                y_batch = y_test[t*BATCH_SIZE:]
-                            else:
-                                X_batch = X_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                                y_batch = y_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                            c, mse, ll = sess.run(
-                                [cost, task_measure, LL],
-                                feed_dict={n_samples: TEST_SAMPLES,
-                                X: X_batch, y: y_batch})
-                            costs.append(c);tms.append(mse);lls.append(ll)
-                        test_cost, test_tm, test_ll =\
-                            np.mean(costs), np.mean(tms), np.mean(lls)
+                        test_cost, test_tm, test_ll = sess.run(
+                            [cost, task_measure, LL],
+                            feed_dict={n_samples: TEST_SAMPLES,
+                                X: X_test, y: y_test})
                         time_test += time.time()
                         if(len(f_test_costs)==0):
                             f_test_costs.append(test_cost)
@@ -275,7 +272,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                             f_test_costs.append(test_cost)
                             f_test_tms.append(test_tm)
                             f_test_lls.append(test_ll)
-                        print('>>> TEST ({:.1f}s)'.format(time_test))
+                        print('>>>> TEST ({:.1f}s)'.format(time_test))
                         print('>> Test Cost = {:.8f}'.format(test_cost))
                         if(task == "regression"):
                             print('>> Test RMSE = {:.8f}'.format(test_tm))
@@ -283,43 +280,31 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                         elif(task == "classification"):
                             print('>> Test Err Rate = {:.8f}'.format(test_tm))
                             print('>> Test AUC = {:.8f}'.format(test_ll))
-                        if(not flag_cvrg):
-                            cnt_cvrg = 0
-                        if(best_cost < train_cost):
+                        if(best_cost < valid_cost):
                             cnt_cvrg += 1
                         else:
-                            best_epoch = len(f_train_costs)
+                            print('!!!! NEW BEST IN VALID !!!!')
+                            best_epoch = len(f_valid_costs)
                             cnt_cvrg = 0
-                            best_cost = train_cost
+                            best_cost = valid_cost
                             if(SAVE):
                                 if not os.path.exists('./trained/'):
                                     os.makedirs('./trained/')
                                 saver.save(sess, save_path)
                             else:
-                                min_tm, max_ll = test_tm, test_ll
+                                sess.run(assign_to_save)
                         if(cnt_cvrg > EARLY_STOP-(epoch*EARLY_STOP/MAX_EPOCHS)):
                             break
                 
                 # Load the selected best params and evaluate its performance
                 if(SAVE):
                     saver.restore(sess, save_path)
-                    tms, lls = [], []
-                    t_iters = int(np.floor(X_test.shape[0]/float(BATCH_SIZE)))
-                    for t in range(t_iters):
-                        if(t == t_iters-1):                   
-                            X_batch = X_test[t*BATCH_SIZE:]
-                            y_batch = y_test[t*BATCH_SIZE:]
-                        else:
-                            X_batch = X_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                            y_batch = y_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                        tm, ll = sess.run(
-                            [task_measure, LL],
-                            feed_dict={n_samples: TEST_SAMPLES,
-                                X: X_batch, y: y_batch})
-                        tms.append(tm);lls.append(ll)
-                    test_tm, test_ll = np.mean(tms), np.mean(lls)
                 else:
-                    test_tm, test_ll = min_tm, max_ll
+                    sess.run(assign_to_restore)
+                test_cost, test_tm, test_ll = sess.run(
+                    [cost, task_measure, LL],
+                    feed_dict={n_samples: TEST_SAMPLES,
+                        X: X_test, y: y_test})
                 print('>>> BEST TEST')
                 if(task == "regression"):
                     print('>> Test RMSE = {:.8f}'.format(test_tm))
@@ -334,13 +319,13 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                 plt.figure()
                 plt.subplot(3, 1, 1)        
                 plt.title(model_code+" on "+dataset_name)
-                test_MAX_EPOCHS = np.arange(len(f_train_costs))*CHECK_FREQ
-                plt.semilogx(test_MAX_EPOCHS, f_train_costs, '--', label='Train')
+                test_MAX_EPOCHS = np.arange(len(f_valid_costs))*CHECK_FREQ
+                plt.semilogx(test_MAX_EPOCHS, f_valid_costs, '--', label='Train')
                 plt.semilogx(test_MAX_EPOCHS, f_test_costs, label='Test')
                 plt.xlabel('Epoch')
                 plt.ylabel('Min Obj {:.4f}'.format(test_cost))
                 plt.subplot(3, 1, 2)
-                plt.semilogx(test_MAX_EPOCHS, f_train_tms, '--', label='Train')
+                plt.semilogx(test_MAX_EPOCHS, f_valid_tms, '--', label='Train')
                 plt.semilogx(test_MAX_EPOCHS, f_test_tms, label='Test')
                 plt.legend(loc='lower left')
                 plt.xlabel('Epoch')
@@ -350,7 +335,7 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     plt.ylabel('CERR {:.4f}'.format(test_tm))
                     plt.ylim([0, 1])
                 plt.subplot(3, 1, 3)
-                plt.semilogx(test_MAX_EPOCHS, f_train_lls, '--', label='Train')
+                plt.semilogx(test_MAX_EPOCHS, f_valid_lls, '--', label='Train')
                 plt.semilogx(test_MAX_EPOCHS, f_test_lls, label='Test')
                 plt.xlabel('Epoch')
                 if(task == "regression"):
@@ -361,9 +346,9 @@ def run_experiment(model_names, dataset_name, train_test_set, **args):
                     os.makedirs('./plots/')
                 plt.savefig('./plots/'+model_code+'_'+problem_name+'.png')
                 plt.close()
-            train_costs.append(np.array(f_train_costs))
-            train_tms.append(np.array(f_train_tms))
-            train_lls.append(np.array(f_train_lls))
+            valid_costs.append(np.array(f_valid_costs))
+            valid_tms.append(np.array(f_valid_tms))
+            valid_lls.append(np.array(f_valid_lls))
             test_costs.append(np.array(f_test_costs))
             test_tms.append(np.array(f_test_tms))
             test_lls.append(np.array(f_test_lls))
