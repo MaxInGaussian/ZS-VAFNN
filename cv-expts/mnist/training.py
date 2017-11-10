@@ -66,7 +66,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'MCFourAct'
+        'MCFourAct', 'DNN'
     ]
     
     dataset = load_data(1)
@@ -79,12 +79,12 @@ if __name__ == '__main__':
         'task': "classification",
         'save': True,
         'plot': True,
-        'n_basis': 50,
+        'n_basis': 100,
         'drop_rate': 0.5,
         'train_samples': 10,
         'test_samples': 50,
         'max_iters': 500,
-        'n_hiddens': [100],
+        'n_hiddens': [100, 100],
         'batch_size': 50,
         'learn_rate': 1e-3,
         'max_epochs': 1000,
