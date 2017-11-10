@@ -312,9 +312,9 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     print('>> Test NLPD = {:.8f}'.format(test_ll))
                 elif(task == "classification"):
                     print('>> Test Err Rate = {:.8f}'.format(test_tm))
-                    print('>> Test AUC = {:.8f}'.format(test_ll))
+                    print('>> Test AUC = {:.8f}'.format(1-test_ll))
                 eval_tms[model_name].append(test_tm)
-                eval_lls[model_name].append(test_ll)
+                eval_lls[model_name].append(1-test_ll)
             if(PLOT):
                 import matplotlib.pyplot as plt
                 plt.figure()
