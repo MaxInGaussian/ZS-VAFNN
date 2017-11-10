@@ -188,7 +188,6 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 accuracy = tf.reduce_mean(tf.cast(
                     tf.equal(y_pred, sparse_y), tf.float32))
                 task_measure = 1-accuracy
-            
                     
             # Run the inference
             def get_batch(X, y, t, iters):
@@ -235,9 +234,9 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                                 feed_dict={n_samples: TEST_SAMPLES,
                                     X: X_batch, y: y_batch})
                             costs.append(c);tms.append(tm);lls.append(ll)
+                        time_valid += time.time()
                         valid_cost, valid_tm, valid_ll =\
                             np.mean(costs), np.mean(tms), np.mean(lls)
-                        time_valid += time.time()
                         if(len(valid_costs)==0):
                             valid_costs.append(valid_cost)
                             valid_tms.append(valid_tm)
@@ -256,23 +255,24 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                         elif(task == "classification"):
                             print('>> Valid Err Rate = {:.8f}'.format(valid_tm))
                             print('>> Valid 1-AUC = {:.8f}'.format(valid_ll))
-                        costs, tms, lls = [], [], []
+                        tms, lls = [], []
                         time_test = -time.time()
-                        test_cost, test_tm, test_ll = sess.run(
-                            [cost, task_measure, LL],
-                            feed_dict={n_samples: TEST_SAMPLES,
-                                X: X_test, y: y_test})
+                        for iter in range(test_iters):
+                            X_batch, y_batch = get_batch(
+                                X_test, y_test, iter, test_iters)
+                            tm, ll = sess.run([task_measure, LL],
+                                feed_dict={n_samples: TEST_SAMPLES,
+                                    X: X_batch, y: y_batch})
+                            tms.append(tm);lls.append(ll)
+                        test_tm, test_ll = np.mean(tms), np.mean(lls)
                         time_test += time.time()
-                        if(len(test_costs)==0):
-                            test_costs.append(test_cost)
+                        if(len(test_tms)==0):
                             test_tms.append(test_tm)
                             test_lls.append(test_ll)
                         else:
-                            test_costs.append(test_cost)
                             test_tms.append(test_tm)
                             test_lls.append(test_ll)
                         print('>>>> TEST ({:.1f}s)'.format(time_test))
-                        print('>> Test Cost = {:.8f}'.format(test_cost))
                         if(task == "regression"):
                             print('>> Test RMSE = {:.8f}'.format(test_tm))
                             print('>> Test NLPD = {:.8f}'.format(test_ll))
@@ -302,10 +302,15 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     saver.restore(sess, save_path)
                 else:
                     sess.run(assign_to_restore)
-                test_cost, test_tm, test_ll = sess.run(
-                    [cost, task_measure, LL],
-                    feed_dict={n_samples: TEST_SAMPLES,
-                        X: X_test, y: y_test})
+                tms, lls = [], []
+                for iter in range(test_iters):
+                    X_batch, y_batch = get_batch(
+                        X_test, y_test, iter, test_iters)
+                    tm, ll = sess.run([task_measure, LL],
+                        feed_dict={n_samples: TEST_SAMPLES,
+                            X: X_batch, y: y_batch})
+                    tms.append(tm);lls.append(ll)
+                test_tm, test_ll = np.mean(tms), np.mean(lls)
                 print('>>> BEST TEST')
                 if(task == "regression"):
                     print('>> Test RMSE = {:.8f}'.format(test_tm))
@@ -364,3 +369,4 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 '{:.4f}\pm{:.4f}'.format(tm_mu, 1.96*tm_std), ll_mu,
                 1.96*ll_std, '{:.4f}\pm{:.4f}'.format(ll_mu, 1.96*ll_std)]
             df_res.to_csv('result.csv', header=res_cols)
+    return eval_tms, eval_lls
