@@ -184,7 +184,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 AUC = tf.metrics.auc(labels=y, predictions=y_pred)
                 y_pred = tf.argmax(y_pred, 1)
                 sparse_y = tf.argmax(y, 1)
-                LL = 1-AUC
+                LL = 1-tf.reduce_mean(AUC)
                 accuracy = tf.reduce_mean(tf.cast(
                     tf.equal(y_pred, sparse_y), tf.float32))
                 task_measure = 1-accuracy

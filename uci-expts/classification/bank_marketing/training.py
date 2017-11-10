@@ -87,7 +87,7 @@ if __name__ == '__main__':
         'train_samples': 10,
         'test_samples': 50,
         'max_iters': 1000,
-        'n_hiddens': [50, 25],
+        'n_hiddens': [100, 50, 25],
         'batch_size': 50,
         'learn_rate': 1e-3,
         'max_epochs': 1000,
