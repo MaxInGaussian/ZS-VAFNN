@@ -327,9 +327,8 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 plt.title(model_code+" on "+dataset_name)
                 test_MAX_EPOCHS = np.arange(len(valid_costs))*CHECK_FREQ
                 plt.semilogx(test_MAX_EPOCHS, valid_costs, '--', label='Train')
-                plt.semilogx(test_MAX_EPOCHS, test_costs, label='Test')
                 plt.xlabel('Epoch')
-                plt.ylabel('Min Obj {:.4f}'.format(test_cost))
+                plt.ylabel('Cost')
                 plt.subplot(3, 1, 2)
                 plt.semilogx(test_MAX_EPOCHS, valid_tms, '--', label='Train')
                 plt.semilogx(test_MAX_EPOCHS, test_tms, label='Test')
@@ -339,7 +338,6 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     plt.ylabel('RMSE {:.4f}'.format(test_tm))
                 elif(task == "classification"):
                     plt.ylabel('ERRT {:.4f}'.format(test_tm))
-                    plt.ylim([0, 1])
                 plt.subplot(3, 1, 3)
                 plt.semilogx(test_MAX_EPOCHS, valid_lls, '--', label='Train')
                 plt.semilogx(test_MAX_EPOCHS, test_lls, label='Test')
