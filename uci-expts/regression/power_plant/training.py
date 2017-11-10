@@ -98,8 +98,11 @@ if __name__ == '__main__':
         if('--' == argv[:2] and '=' in argv):
             eq_ind = argv.index('=')
             setting_feature = argv[2:eq_ind]
+            setting_value = argv[eq_ind+1:]
             if(setting_feature in ['save', 'plot']):
-                training_settings[setting_feature] = (argv[eq_ind+1:]=='True')
+                training_settings[setting_feature] = (setting_value=='True')
+            if(setting_feature == 'model'):
+                model_names = [setting_value]
     
     print(training_settings)
     
