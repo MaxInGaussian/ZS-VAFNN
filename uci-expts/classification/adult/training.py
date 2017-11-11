@@ -69,7 +69,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'VIFourAct', 'MCDropout', 'MCFourAct'
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
     ]
     
     dataset = load_data(5)
@@ -83,16 +83,16 @@ if __name__ == '__main__':
         'save': False,
         'plot': True,
         'n_basis': 50,
-        'drop_rate': 0.5,
+        'drop_rate': 0.15,
         'train_samples': 10,
-        'test_samples': 50,
+        'test_samples': 100,
         'max_iters': 1000,
-        'n_hiddens': [100, 50, 25],
-        'batch_size': 50,
+        'n_hiddens': [50, 25],
+        'batch_size': 10,
         'learn_rate': 1e-3,
-        'max_epochs': 1000,
-        'early_stop': 5,
-        'check_freq': 10,
+        'max_epochs': 1500,
+        'early_stop': 10,
+        'check_freq': 5,
     }
      
     for argv in sys.argv:
@@ -118,16 +118,3 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> ERRT = {:.4f} \pm {:.4f}'.format(errt_mu, 1.96*errt_std))
         print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, 1.96*ll_std))
-    
-    '''
-    Result:
-        >>> BayesNN
-        >> err_rate = 0.1458 p/m 0.0036
-        >> log_likelihood = -0.3113 p/m 0.0041
-        >>> DropoutNN
-        >> err_rate = 0.1539 p/m 0.0035
-        >> log_likelihood = -0.3413 p/m 0.0036
-        >>> VAFNN
-        >> err_rate = 0.1454 p/m 0.0039
-        >> log_likelihood = -0.3203 p/m 0.0052
-    '''

@@ -67,7 +67,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'VIFourAct', 'MCDropout', 'MCFourAct'
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
     ]
     
     dataset = load_data(5)
@@ -81,16 +81,16 @@ if __name__ == '__main__':
         'save': False,
         'plot': True,
         'n_basis': 50,
-        'drop_rate': 0.5,
+        'drop_rate': 0.15,
         'train_samples': 10,
         'test_samples': 100,
         'max_iters': 1000,
         'n_hiddens': [100, 50, 25],
-        'batch_size': 50,
+        'batch_size': 100,
         'learn_rate': 1e-3,
-        'max_epochs': 1000,
-        'early_stop': 5,
-        'check_freq': 10,
+        'max_epochs': 1500,
+        'early_stop': 10,
+        'check_freq': 5,
     }
      
     for argv in sys.argv:
@@ -117,16 +117,3 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> RMSE = {:.4f} \pm {:.4f}'.format(rmse_mu, 1.96*rmse_std))
         print('>> NLPD = {:.4f} \pm {:.4f}'.format(ll_mu, 1.96*ll_std))
-    
-    '''
-    Result:
-        >>> VIBayesNN
-        >> RMSE = 0.0354 \pm 0.0009
-        >> NLPD = -3.4885 \pm 0.1019
-        >>> MCDropout
-        >> RMSE = 0.0533 \pm 0.0009
-        >> NLPD = -1.3233 \pm 0.0226
-        >>> MCFourAct
-        >> RMSE = 0.0285 \pm 0.0010
-        >> NLPD = -1.5357 \pm 0.1701
-    '''
