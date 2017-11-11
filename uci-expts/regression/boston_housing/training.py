@@ -68,7 +68,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'MCDropout', 'MCFourAct'
+        'DNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
     ]
     
     dataset = load_data(5)

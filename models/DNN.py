@@ -32,12 +32,10 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(X, 1)
         for i in range(len(net_sizes)-1):
-            f = tf.layers.dense(f, net_sizes[i+1],
-                kernel_regularizer=layers.l2_regularizer(scale=1e-2),
-                bias_regularizer=layers.l2_regularizer(scale=1e-2))
+            f = tf.layers.dense(f, net_sizes[i+1])
             if(i < len(net_sizes)-2):
                 f = tf.nn.relu(f)
         f = tf.squeeze(f, [1])
         if(task == "classification"):
             f = tf.nn.softmax(f)
-    return model, f, tf.losses.get_regularization_loss()
+    return model, f, None

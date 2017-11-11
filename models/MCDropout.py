@@ -31,9 +31,7 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
         for i in range(len(net_sizes)-1):
-            f = tf.layers.dense(f, net_sizes[i+1],
-                kernel_regularizer=layers.l2_regularizer(scale=1e-2),
-                bias_regularizer=layers.l2_regularizer(scale=1e-2))
+            f = tf.layers.dense(f, net_sizes[i+1])
             w_shape = [1, 1, net_sizes[i+1]]
             w_p = tf.ones([1, 1, net_sizes[i+1]])*drop_rate
             w_u = tf.random_uniform(tf.concat([[n_samples], w_shape], 0), 0, 1)
@@ -47,4 +45,4 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
         elif(task == "classification"):
             y = zs.OnehotCategorical('y', f)
-    return model, f, tf.losses.get_regularization_loss()
+    return model, f, None
