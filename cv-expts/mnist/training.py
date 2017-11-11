@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Copyright 2017 Max W. Y. Lam
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -131,4 +129,3 @@ if __name__ == '__main__':
         >> err_rate = 0.1454 p/m 0.0039
         >> log_likelihood = -0.3203 p/m 0.0052
     '''
->>>>>>> 50bec9d921e0d6238fbf217a6dc96f74d2a3ecbd
