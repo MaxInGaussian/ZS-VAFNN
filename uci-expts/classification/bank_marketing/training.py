@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Copyright 2017 Max W. Y. Lam
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -134,4 +132,3 @@ if __name__ == '__main__':
         >> ERRT = 0.0866 p/m 0.0013
         >> AUC = 0.9684 p/m 0.0013
     '''
->>>>>>> 50bec9d921e0d6238fbf217a6dc96f74d2a3ecbd

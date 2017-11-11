@@ -54,11 +54,11 @@ def load_data(n_folds):
     else:
         train_set, valid_set, test_set = pickle.load(f, encoding='latin1')
     f.close()
-    X_train, y_train = train_set[0], train_set[1]
-    X_valid, y_valid = valid_set[0], valid_set[1]
+    X_train = np.vstack((train_set[0], valid_set[0]))
+    y_train = np.vstack((train_set[1], valid_set[1]))
     X_test, y_test = test_set[0], test_set[1]
     return [[X_train, to_one_hot(y_train, 10),
-        X_valid, to_one_hot(y_valid, 10),
+        X_test, to_one_hot(y_test, 10),
         X_test, to_one_hot(y_test, 10)]]
 
 

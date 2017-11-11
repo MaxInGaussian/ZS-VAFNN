@@ -75,7 +75,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
         module = importlib.import_module("models."+model_name)
         w_names = module.get_w_names(DROP_RATE, net_sizes)     
         model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
-        
+                    
         # Build the computation graph
         n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
         X = tf.placeholder(tf.float32, shape=[None, D])
@@ -84,77 +84,6 @@ def run_experiment(model_names, dataset_name, dataset, **args):
         elif(task == "classification"):
             y = tf.placeholder(tf.int32, shape=[None, P])
         y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
-        
-        
-        observed = {'y': y_obs}
-        if(len(w_names) > 0):
-            var = module.var_q_w(n_basis, net_sizes, n_samples)
-            q_w_outputs = var.query(w_names,
-                outputs=True, local_log_prob=True)
-            latent = dict(zip(w_names, q_w_outputs))
-            observed.update({
-                (w_name, latent[w_name][0]) for w_name in w_names})
-
-            if('VI' in model_name):
-                def log_joint(observed):
-                    model, _, _ = module.p_Y_Xw(observed, X, DROP_RATE,
-                        n_basis, net_sizes, n_samples, task)
-                    log_py_xw = model.local_log_prob('y')
-                    log_j = zs.log_mean_exp(log_py_xw, 0)*N
-                    if(len(w_names)):
-                        log_pws = model.local_log_prob(w_names)
-                        log_j += tf.add_n(log_pws)
-                    return log_j
-                lower_bound = zs.variational.elbo(
-                    log_joint, observed={'y': y_obs}, latent=latent, axis=0)
-                cost = tf.reduce_mean(lower_bound.sgvb())
-                lower_bound = tf.reduce_mean(lower_bound)       
-        
-        # Prediction: rms error & nlpd
-        model, f, reg_cost = module.p_Y_Xw(observed, X,
-            DROP_RATE, n_basis, net_sizes, n_samples, task)
-        if(model_name == "DNN"):
-            y_pred, y_var = f, 1.
-        else:
-            y_pred, y_var = tf.nn.moments(f, axes=[0])
-            if(task == "classification"):
-                g_mu, g_var = tf.nn.moments(f, axes=[2])
-                g_mu = tf.expand_dims(tf.reduce_mean(g_mu, 0), 1)
-                g_var = tf.expand_dims(tf.reduce_mean(g_var, 0), 1)
-                y_pred = (y_pred-g_mu)/g_var**0.5
-                y_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
-        if(model_name == "DNN" or 'MC' in model_name):
-            cost = tf.losses.mean_squared_error(y_pred, y)
-            lower_bound = -cost
-        else:
-            log_py_xw = model.local_log_prob('y')
-        if(reg_cost is not None):
-            cost += reg_cost
-        
-        learn_rate_ph = tf.placeholder(tf.float32, shape=[])
-        global_step = tf.Variable(0, trainable=False)
-        learn_rate_ts = tf.train.exponential_decay(
-            learn_rate_ph, global_step, 10000, 0.96, staircase=True)
-        if(model_name  == "VIBayesNN"):
-            learn_rate_ts *= 5
-        optimizer = tf.train.AdamOptimizer(learn_rate_ts)
-        infer_op = optimizer.minimize(cost, global_step=global_step)
-        
-        if(SAVE):
-            save_vars = {}
-            for var in tf.trainable_variables():
-                print(var.name, var.get_shape())
-                save_vars[var.name] = var
-            saver = tf.train.Saver(save_vars)
-            save_path = './trained/'+model_code+'_'+dataset_name+'.ckpt'
-        else:
-            save_vars = []
-            for var in tf.trainable_variables():
-                save_vars.append(tf.Variable(var.initialized_value()))
-            assign_to_save, assign_to_restore = [], []
-            for var, save_var in zip(tf.trainable_variables(), save_vars):
-                assign_to_save.append(save_var.assign(var))
-                assign_to_restore.append(var.assign(save_var))
         
         for fold in range(len(dataset)):
             np.random.seed(314159)
@@ -168,10 +97,87 @@ def run_experiment(model_names, dataset_name, dataset, **args):
             test_iters = int(np.floor(T/float(BATCH_SIZE)))
         
             # Standardize data
-            X_train, X_valid, X_test, _, _ = standardize(X_train, X_valid, X_test)
+            X_train, X_valid, X_test = standardize(X_train, X_valid, X_test)[:3]
             if(task == "regression"):
                 y_train, y_valid, y_test, mean_y_train, std_y_train =\
-                    standardize(y_train, y_valid, y_test)
+                    standardize(y_train, y_valid, y_test)        
+            
+            
+            observed = {'y': y_obs}
+            if(len(w_names) > 0):
+                var = module.var_q_w(n_basis, net_sizes, n_samples)
+                q_w_outputs = var.query(w_names,
+                    outputs=True, local_log_prob=True)
+                latent = dict(zip(w_names, q_w_outputs))
+                observed.update({
+                    (w_name, latent[w_name][0]) for w_name in w_names})
+    
+                if('VI' in model_name):
+                    def log_joint(observed):
+                        model, _, _ = module.p_Y_Xw(observed, X, DROP_RATE,
+                            n_basis, net_sizes, n_samples, task)
+                        log_py_xw = model.local_log_prob('y')
+                        log_j = zs.log_mean_exp(log_py_xw, 0)*N
+                        if(len(w_names)):
+                            log_pws = model.local_log_prob(w_names)
+                            log_j += tf.add_n(log_pws)
+                        return log_j
+                    lower_bound = zs.variational.elbo(
+                        log_joint, observed={'y': y_obs}, latent=latent, axis=0)
+                    cost = tf.reduce_mean(lower_bound.sgvb())
+                    lower_bound = tf.reduce_mean(lower_bound)       
+            
+            # Prediction: rms error & nlpd
+            model, f, side_prod = module.p_Y_Xw(observed, X,
+                DROP_RATE, n_basis, net_sizes, n_samples, task)
+            if(model_name == "DNN"):
+                y_pred, y_var = f, 1.
+            else:
+                y_pred, y_var = tf.nn.moments(f, axes=[0])
+                if(task == "classification"):
+                    g_mu, g_var = tf.nn.moments(f, axes=[2])
+                    g_mu = tf.expand_dims(tf.reduce_mean(g_mu, 0), 1)
+                    g_var = tf.expand_dims(tf.reduce_mean(g_var, 0), 1)
+                    y_pred = (y_pred-g_mu)/g_var**0.5
+                    y_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
+            if(model_name == "DNN"):
+                if(task == "regression"):
+                    cost = tf.losses.mean_squared_error(y_pred, y)
+                if(task == "classification"):
+                    cost = tf.reduce_mean(
+                        tf.nn.softmax_cross_entropy_with_logits(
+                            logits=y_pred, labels=y))
+            elif('MC' in model_name):
+                cost = tf.losses.mean_squared_error(y_pred, y)
+            else:
+                log_py_xw = model.local_log_prob('y')
+            if(side_prod is not None):
+                cost += side_prod
+            
+            learn_rate_ph = tf.placeholder(tf.float32, shape=[])
+            global_step = tf.Variable(0, trainable=False)
+            learn_rate_ts = tf.train.exponential_decay(
+                learn_rate_ph, global_step, 10000, 0.96, staircase=True)
+            if(model_name  == "VIBayesNN"):
+                learn_rate_ts *= 5
+            optimizer = tf.train.AdamOptimizer(learn_rate_ts)
+            infer_op = optimizer.minimize(cost, global_step=global_step)
+            
+            if(SAVE):
+                save_vars = {}
+                for var in tf.trainable_variables():
+                    print(var.name, var.get_shape())
+                    save_vars[var.name] = var
+                saver = tf.train.Saver(save_vars)
+                save_path = './trained/'+model_code+'_'+dataset_name+'.ckpt'
+            else:
+                save_vars = []
+                for var in tf.trainable_variables():
+                    save_vars.append(tf.Variable(var.initialized_value()))
+                assign_to_save, assign_to_restore = [], []
+                for var, save_var in zip(tf.trainable_variables(), save_vars):
+                    assign_to_save.append(save_var.assign(var))
+                    assign_to_restore.append(var.assign(save_var))
             
             # Define optimization objective
             if(task == "regression"):
@@ -181,26 +187,29 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 rms_error = tf.sqrt(tf.reduce_mean((y_pred - y)**2))*std_y_train
                 task_measure = tf.reduce_mean(rms_error)
             elif(task == "classification"):
-                AUC = tf.metrics.auc(labels=y, predictions=y_pred)
+                AUC = 0.
+                for p in range(P):
+                    AUC += tf.metrics.auc(
+                        labels=y[:, p], predictions=y_pred[:, p])[1]
+                LL = AUC/P
                 y_pred = tf.argmax(y_pred, 1)
                 sparse_y = tf.argmax(y, 1)
-                LL = 1-tf.reduce_mean(AUC)
                 accuracy = tf.reduce_mean(tf.cast(
                     tf.equal(y_pred, sparse_y), tf.float32))
-                task_measure = 1-accuracy
+                task_measure = accuracy
                     
             # Run the inference
-            def get_batch(X, y, t, iters):
+            def get_batch(X_data, y_data, t, iters):
                 if(iters <= MAX_ITERS):
                     if(t == iters-1):                        
-                        X_batch = X[t*BATCH_SIZE:]
-                        y_batch = y[t*BATCH_SIZE:]
+                        X_batch = X_data[t*BATCH_SIZE:]
+                        y_batch = y_data[t*BATCH_SIZE:]
                     else:
-                        X_batch = X[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                        y_batch = y[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                        X_batch = X_data[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                        y_batch = y_data[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
                 else:
                     inds = np.random.choice(range(N), BATCH_SIZE, replace=False)
-                    X_batch, y_batch = X[inds], y[inds]
+                    X_batch, y_batch = X_data[inds], y_data[inds]
                 return X_batch, y_batch
             best_tm, best_ll, best_cost, cnt_cvrg = [np.Infinity]*3+[0]
             valid_costs, valid_tms, valid_lls = [], [], []
@@ -212,13 +221,13 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     time_epoch = -time.time()
                     costs = []
                     for iter in range(min(MAX_ITERS, train_iters)):
-                        X_batch, y_batch = get_batch(
+                        Xt_batch, yt_batch = get_batch(
                             X_train, y_train, iter, train_iters)
                         _, c = sess.run(
                             [infer_op, cost],
                             feed_dict={n_samples: TRAIN_SAMPLES,
                                 learn_rate_ph: LEARN_RATE,
-                                X: X_batch, y: y_batch})
+                                X: Xt_batch, y: yt_batch})
                         costs.append(c)
                     time_epoch += time.time()
                     train_cost =  np.mean(costs)
@@ -227,12 +236,12 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     if epoch % CHECK_FREQ == 0 and epoch > 0:
                         costs, tms, lls = [], [], []
                         time_valid = -time.time()
-                        for iter in range(min(MAX_ITERS, valid_iters)):
-                            X_batch, y_batch = get_batch(
+                        for iter in range(valid_iters):
+                            Xv_batch, yv_batch = get_batch(
                                 X_valid, y_valid, iter, valid_iters)
                             c, tm, ll = sess.run([cost, task_measure, LL],
                                 feed_dict={n_samples: TEST_SAMPLES,
-                                    X: X_batch, y: y_batch})
+                                    X: Xv_batch, y: yv_batch})
                             costs.append(c);tms.append(tm);lls.append(ll)
                         time_valid += time.time()
                         valid_cost, valid_tm, valid_ll =\
@@ -254,7 +263,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                             print('>> Valid NLPD = {:.8f}'.format(valid_ll))
                         elif(task == "classification"):
                             print('>> Valid Err Rate = {:.8f}'.format(valid_tm))
-                            print('>> Valid 1-AUC = {:.8f}'.format(valid_ll))
+                            print('>> Valid AUC = {:.8f}'.format(valid_ll))
                         tms, lls = [], []
                         time_test = -time.time()
                         for iter in range(test_iters):
@@ -278,9 +287,10 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                             print('>> Test NLPD = {:.8f}'.format(test_ll))
                         elif(task == "classification"):
                             print('>> Test Err Rate = {:.8f}'.format(test_tm))
-                            print('>> Test 1-AUC = {:.8f}'.format(test_ll))
+                            print('>> Test AUC = {:.8f}'.format(test_ll))
                         if(best_cost > valid_cost or
-                            (best_tm > valid_tm and best_ll > valid_ll)):
+                            (best_tm > valid_tm and best_ll > valid_ll and task=='regression') or
+                            (best_tm < valid_tm and best_ll < valid_ll and task=='classification')):
                             print('!!!! NEW BEST IN VALID !!!!')
                             cnt_cvrg = 0
                             best_tm = valid_tm
@@ -317,9 +327,9 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     print('>> Test NLPD = {:.8f}'.format(test_ll))
                 elif(task == "classification"):
                     print('>> Test Err Rate = {:.8f}'.format(test_tm))
-                    print('>> Test AUC = {:.8f}'.format(1-test_ll))
+                    print('>> Test AUC = {:.8f}'.format(test_ll))
                 eval_tms[model_name].append(test_tm)
-                eval_lls[model_name].append(1-test_ll)
+                eval_lls[model_name].append(test_ll)
             if(PLOT):
                 import matplotlib.pyplot as plt
                 plt.figure()

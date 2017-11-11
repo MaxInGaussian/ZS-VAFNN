@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 # Copyright 2017 Max W. Y. Lam
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,7 +70,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'VIBayesNN', 'VIFourAct', 'MCDropout', 'MCFourAct'
+        'DNN', 'VIBayesNN', 'VIFourAct', 'MCDropout', 'MCFourAct'
     ]
     
     dataset = load_data(5)
@@ -93,9 +91,9 @@ if __name__ == '__main__':
         'n_hiddens': [50, 25],
         'batch_size': 10,
         'learn_rate': 1e-3,
-        'max_epochs': 1000,
-        'early_stop': 5,
-        'check_freq': 10,
+        'max_epochs': 1500,
+        'early_stop': 10,
+        'check_freq': 5
     }
      
     for argv in sys.argv:
@@ -119,17 +117,3 @@ if __name__ == '__main__':
         print('>>> '+model_name)
         print('>> ERRT = {:.4f} \pm {:.4f}'.format(errt_mu, 1.96*errt_std))
         print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, 1.96*ll_std))
-    
-    '''
-    Result:
-        >>> VIBayesNN
-        >> ERRT = 0.0685 \pm 0.0037
-        >> AUC = 0.9738 \pm 0.0004
-        >>> MCDropout
-        >> ERRT = 0.0670 \pm 0.0088
-        >> AUC = 0.9685 \pm 0.0020
-        >>> MCFourAct
-        >> ERRT = 0.0637 \pm 0.0027
-        >> AUC = 0.9746 \pm 0.0023
-    '''
->>>>>>> 50bec9d921e0d6238fbf217a6dc96f74d2a3ecbd

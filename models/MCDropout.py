@@ -34,11 +34,10 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
             f = tf.layers.dense(f, net_sizes[i+1],
                 kernel_regularizer=layers.l2_regularizer(scale=1e-2),
                 bias_regularizer=layers.l2_regularizer(scale=1e-2))
-            w_p = tf.get_variable('w_p'+str(i), shape=[1, 1, net_sizes[i+1]],
-                initializer=tf.constant_initializer(1.))*drop_rate
-            w = zs.Bernoulli('w'+str(i), w_p,
-                n_samples=n_samples, group_ndims=2)
-            f = f*tf.cast(w, tf.float32)
+            w_shape = [1, 1, net_sizes[i+1]]
+            w_p = tf.ones([1, 1, net_sizes[i+1]])*drop_rate
+            w_u = tf.random_uniform(tf.concat([[n_samples], w_shape], 0), 0, 1)
+            f = f*tf.cast(tf.less(w_u, 1-drop_rate), tf.float32)
             if(i < len(net_sizes)-2):
                 f = tf.nn.relu(f)
         f = tf.squeeze(f, [2])
