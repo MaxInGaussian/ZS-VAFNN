@@ -81,7 +81,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
         y = tf.placeholder(tf.float32, shape=[None, P])
     elif(task == "classification"):
         y = tf.placeholder(tf.int32, shape=[None, P])
-        y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
+    y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
         
     for fold in range(len(dataset)):
             
