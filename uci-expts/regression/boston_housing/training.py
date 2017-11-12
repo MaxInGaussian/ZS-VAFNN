@@ -81,7 +81,7 @@ if __name__ == '__main__':
         'task': "regression",
         'save': False,
         'plot': True,
-        'n_basis': 50,
+        'n_basis': 100,
         'drop_rate': 0.15,
         'train_samples': 20,
         'test_samples': 100,

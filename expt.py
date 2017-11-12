@@ -374,21 +374,21 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     os.makedirs('./plots/')
                 plt.savefig('./plots/'+model_code+'_'+problem_name+'.png')
                 plt.close()
-            tm_mu = np.mean(eval_tms[model_name])
-            tm_std = np.std(eval_tms[model_name])
-            ll_mu = np.mean(eval_lls[model_name])
-            ll_std = np.std(eval_lls[model_name])
-            tm_name = 'RMSE' if task == "regression" else 'ACC'
-            ll_name = 'NLPD' if task == "regression" else 'AUC'
-            res_cols = [tm_name+' (mean)', tm_name+' (1.96*std)', tm_name,
-                ll_name+' (mean)', ll_name+' (1.96*std)', ll_name]
-            if not os.path.isfile('result.csv'):
-                df_res = pd.DataFrame(columns=res_cols)
-            else:
-                df_res = pd.DataFrame.from_csv(
-                    path='result.csv', header=0, index_col=0)
-            df_res.loc[model_code] = [tm_mu, 1.96*tm_std,
-                '{:.4f}\pm{:.4f}'.format(tm_mu, 1.96*tm_std), ll_mu,
-                1.96*ll_std, '{:.4f}\pm{:.4f}'.format(ll_mu, 1.96*ll_std)]
-            df_res.to_csv('result.csv', header=res_cols)
+        tm_mu = np.mean(eval_tms[model_name])
+        tm_std = np.std(eval_tms[model_name])
+        ll_mu = np.mean(eval_lls[model_name])
+        ll_std = np.std(eval_lls[model_name])
+        tm_name = 'RMSE' if task == "regression" else 'ACC'
+        ll_name = 'NLPD' if task == "regression" else 'AUC'
+        res_cols = [tm_name+' (mean)', tm_name+' (1.96*std)', tm_name,
+            ll_name+' (mean)', ll_name+' (1.96*std)', ll_name]
+        if not os.path.isfile('result.csv'):
+            df_res = pd.DataFrame(columns=res_cols)
+        else:
+            df_res = pd.DataFrame.from_csv(
+                path='result.csv', header=0, index_col=0)
+        df_res.loc[model_code] = [tm_mu, 1.96*tm_std,
+            '{:.4f}\pm{:.4f}'.format(tm_mu, 1.96*tm_std), ll_mu,
+            1.96*ll_std, '{:.4f}\pm{:.4f}'.format(ll_mu, 1.96*ll_std)]
+        df_res.to_csv('result.csv', header=res_cols)
     return eval_tms, eval_lls

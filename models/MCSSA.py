@@ -42,9 +42,8 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
                     shape=[1, 1, net_sizes[i+1], n_basis],
                     initializer=tf.constant_initializer(0.))
                 omega_std = tf.exp(omega_logstd)
-                omega = omega_mean+(tf.random_normal([
-                    n_samples, 1, 1, n_basis])*tf.random_normal([
-                    n_samples, 1, net_sizes[i+1], 1]))*omega_std
+                omega = omega_mean+tf.random_normal([
+                    n_samples, 1, net_sizes[i+1], n_basis])*omega_std
                 omega = tf.tile(omega, [1, tf.shape(X)[0], 1, 1])
                 f = tf.matmul(f, omega)/tf.sqrt(net_sizes[i+1]*1.)
                 f = tf.concat([tf.cos(f), tf.sin(f)], 3)/tf.sqrt(n_basis*1.)
