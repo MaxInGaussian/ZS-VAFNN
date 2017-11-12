@@ -70,37 +70,39 @@ def run_experiment(model_names, dataset_name, dataset, **args):
     min_tm, max_nll = np.Infinity, -np.Infinity
     eval_tms = {model_name:[] for model_name in model_names}
     eval_lls = {model_name:[] for model_name in model_names}
-    for model_name in model_names:
     
-        module = importlib.import_module("models."+model_name)
-        w_names = module.get_w_names(DROP_RATE, net_sizes)     
-        model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
-        
-        for fold in range(len(dataset)):
-            np.random.seed(314159)
-            tf.set_random_seed(314159)
-            
-            X_train, y_train, X_valid, y_valid, X_test, y_test = dataset[fold]
-            problem_name = dataset_name.replace(' ', '_')+'_'+str(fold+1)
-            N, M, T = X_train.shape[0], X_valid.shape[0], X_test.shape[0]
-            train_iters = int(np.floor(N/float(BATCH_SIZE)))
-            valid_iters = int(np.floor(M/float(BATCH_SIZE)))
-            test_iters = int(np.floor(T/float(BATCH_SIZE)))
-        
-            # Standardize data
-            X_train, X_valid, X_test = standardize(X_train, X_valid, X_test)[:3]
-            if(task == "regression"):
-                y_train, y_valid, y_test, mean_y_train, std_y_train =\
-                    standardize(y_train, y_valid, y_test)        
+    np.random.seed(314159)
+    tf.set_random_seed(314159)
 
-            # Build the computation graph
-            n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
-            X = tf.placeholder(tf.float32, shape=[None, D])
-            if(task == "regression"):
-                y = tf.placeholder(tf.float32, shape=[None, P])
-            elif(task == "classification"):
-                y = tf.placeholder(tf.int32, shape=[None, P])
-            y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
+    # Build the computation graph
+    n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
+    X = tf.placeholder(tf.float32, shape=[None, D])
+    if(task == "regression"):
+        y = tf.placeholder(tf.float32, shape=[None, P])
+    elif(task == "classification"):
+        y = tf.placeholder(tf.int32, shape=[None, P])
+        y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
+        
+    for fold in range(len(dataset)):
+            
+        X_train, y_train, X_valid, y_valid, X_test, y_test = dataset[fold]
+        problem_name = dataset_name.replace(' ', '_')+'_'+str(fold+1)
+        N, M, T = X_train.shape[0], X_valid.shape[0], X_test.shape[0]
+        train_iters = int(np.floor(N/float(BATCH_SIZE)))
+        valid_iters = int(np.floor(M/float(BATCH_SIZE)))
+        test_iters = int(np.floor(T/float(BATCH_SIZE)))
+    
+        # Standardize data
+        X_train, X_valid, X_test = standardize(X_train, X_valid, X_test)[:3]
+        if(task == "regression"):
+            y_train, y_valid, y_test, mean_y_train, std_y_train =\
+                standardize(y_train, y_valid, y_test)
+        
+        for model_name in model_names:
+    
+            module = importlib.import_module("models."+model_name)
+            w_names = module.get_w_names(DROP_RATE, net_sizes)     
+            model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
             
             observed = {'y': y_obs}
             if(len(w_names) > 0):
@@ -137,15 +139,15 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     g_mu, g_var = tf.nn.moments(f, axes=[2])
                     g_mu = tf.expand_dims(tf.reduce_mean(g_mu, 0), 1)
                     g_var = tf.expand_dims(tf.reduce_mean(g_var, 0), 1)
-                    y_pred = (y_pred-g_mu)/g_var**0.5
-                    y_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
+                    p_pred = (y_pred-g_mu)/g_var**0.5
+                    p_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
             if(model_name == "DNN"):
-                if(task == "regression"):
-                    cost = tf.losses.mean_squared_error(y_pred, y)
-                if(task == "classification"):
-                    cost = tf.reduce_mean(
-                        tf.nn.softmax_cross_entropy_with_logits(
-                            logits=y_pred, labels=y))
+                # if(task == "regression"):
+                cost = tf.losses.mean_squared_error(y_pred, y)
+                # if(task == "classification"):
+                #     cost = tf.reduce_mean(
+                #         tf.nn.softmax_cross_entropy_with_logits(
+                #             logits=y_pred, labels=y))
             elif('MC' in model_name):
                 cost = tf.losses.mean_squared_error(y_pred, y)
             else:
@@ -189,7 +191,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 AUC = 0.
                 for p in range(P):
                     AUC += tf.metrics.auc(
-                        labels=y[:, p], predictions=y_pred[:, p])[1]
+                        labels=y[:, p], predictions=p_pred[:, p])[1]
                 LL = AUC/P
                 y_pred = tf.argmax(y_pred, 1)
                 sparse_y = tf.argmax(y, 1)
