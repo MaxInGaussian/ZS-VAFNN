@@ -70,7 +70,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA'
     ]
     
     dataset = load_data(5)

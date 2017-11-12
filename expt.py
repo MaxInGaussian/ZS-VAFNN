@@ -75,15 +75,6 @@ def run_experiment(model_names, dataset_name, dataset, **args):
         module = importlib.import_module("models."+model_name)
         w_names = module.get_w_names(DROP_RATE, net_sizes)     
         model_code = model_name+"{"+",".join(list(map(str, net_sizes)))+"}"
-                    
-        # Build the computation graph
-        n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
-        X = tf.placeholder(tf.float32, shape=[None, D])
-        if(task == "regression"):
-            y = tf.placeholder(tf.float32, shape=[None, P])
-        elif(task == "classification"):
-            y = tf.placeholder(tf.int32, shape=[None, P])
-        y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
         
         for fold in range(len(dataset)):
             np.random.seed(314159)
@@ -101,7 +92,15 @@ def run_experiment(model_names, dataset_name, dataset, **args):
             if(task == "regression"):
                 y_train, y_valid, y_test, mean_y_train, std_y_train =\
                     standardize(y_train, y_valid, y_test)        
-            
+
+            # Build the computation graph
+            n_samples = tf.placeholder(tf.int32, shape=[], name='n_samples')
+            X = tf.placeholder(tf.float32, shape=[None, D])
+            if(task == "regression"):
+                y = tf.placeholder(tf.float32, shape=[None, P])
+            elif(task == "classification"):
+                y = tf.placeholder(tf.int32, shape=[None, P])
+            y_obs = tf.tile(tf.expand_dims(y, 0), [n_samples, 1, 1])
             
             observed = {'y': y_obs}
             if(len(w_names) > 0):
@@ -211,7 +210,11 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     inds = np.random.choice(range(N), BATCH_SIZE, replace=False)
                     X_batch, y_batch = X_data[inds], y_data[inds]
                 return X_batch, y_batch
-            best_tm, best_ll, best_cost, cnt_cvrg = [np.Infinity]*3+[0]
+            best_cost, cnt_cvrg = np.Infinity, 0
+            if(task == 'regression'):
+                best_tm, best_ll = np.Infinity, np.Infinity
+            elif(task == 'classification'):
+                best_tm, best_ll = -np.Infinity, -np.Infinity
             valid_costs, valid_tms, valid_lls = [], [], []
             test_costs, test_tms, test_lls = [], [], []
             with tf.Session() as sess:
@@ -262,13 +265,17 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                             print('>> Valid RMSE = {:.8f}'.format(valid_tm))
                             print('>> Valid NLPD = {:.8f}'.format(valid_ll))
                         elif(task == "classification"):
-                            print('>> Valid Err Rate = {:.8f}'.format(valid_tm))
+                            print('>> Valid ACC = {:.8f}'.format(valid_tm))
                             print('>> Valid AUC = {:.8f}'.format(valid_ll))
                         tms, lls = [], []
                         time_test = -time.time()
-                        for iter in range(test_iters):
-                            X_batch, y_batch = get_batch(
-                                X_test, y_test, iter, test_iters)
+                        for t in range(test_iters):
+                            if(t == test_iters-1):
+                                X_batch = X_test[t*BATCH_SIZE:]
+                                y_batch = y_test[t*BATCH_SIZE:]
+                            else:
+                                X_batch = X_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                                y_batch = y_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
                             tm, ll = sess.run([task_measure, LL],
                                 feed_dict={n_samples: TEST_SAMPLES,
                                     X: X_batch, y: y_batch})
@@ -286,11 +293,12 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                             print('>> Test RMSE = {:.8f}'.format(test_tm))
                             print('>> Test NLPD = {:.8f}'.format(test_ll))
                         elif(task == "classification"):
-                            print('>> Test Err Rate = {:.8f}'.format(test_tm))
+                            print('>> Test ACC = {:.8f}'.format(test_tm))
                             print('>> Test AUC = {:.8f}'.format(test_ll))
-                        if(best_cost > valid_cost or
-                            (best_tm > valid_tm and best_ll > valid_ll and task=='regression') or
-                            (best_tm < valid_tm and best_ll < valid_ll and task=='classification')):
+                        if(((best_tm > valid_tm or best_ll > valid_ll)
+                            and task=='regression') or
+                            ((best_tm < valid_tm or best_ll < valid_ll)
+                            and task=='classification')):
                             print('!!!! NEW BEST IN VALID !!!!')
                             cnt_cvrg = 0
                             best_tm = valid_tm
@@ -313,9 +321,13 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 else:
                     sess.run(assign_to_restore)
                 tms, lls = [], []
-                for iter in range(test_iters):
-                    X_batch, y_batch = get_batch(
-                        X_test, y_test, iter, test_iters)
+                for t in range(test_iters):
+                    if(t == test_iters-1):
+                        X_batch = X_test[t*BATCH_SIZE:]
+                        y_batch = y_test[t*BATCH_SIZE:]
+                    else:
+                        X_batch = X_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                        y_batch = y_test[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
                     tm, ll = sess.run([task_measure, LL],
                         feed_dict={n_samples: TEST_SAMPLES,
                             X: X_batch, y: y_batch})
@@ -326,7 +338,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     print('>> Test RMSE = {:.8f}'.format(test_tm))
                     print('>> Test NLPD = {:.8f}'.format(test_ll))
                 elif(task == "classification"):
-                    print('>> Test Err Rate = {:.8f}'.format(test_tm))
+                    print('>> Test ACC = {:.8f}'.format(test_tm))
                     print('>> Test AUC = {:.8f}'.format(test_ll))
                 eval_tms[model_name].append(test_tm)
                 eval_lls[model_name].append(test_ll)
@@ -347,7 +359,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 if(task == "regression"):
                     plt.ylabel('RMSE {:.4f}'.format(test_tm))
                 elif(task == "classification"):
-                    plt.ylabel('ERRT {:.4f}'.format(test_tm))
+                    plt.ylabel('ACC {:.4f}'.format(test_tm))
                 plt.subplot(3, 1, 3)
                 plt.semilogx(test_MAX_EPOCHS, valid_lls, '--', label='Train')
                 plt.semilogx(test_MAX_EPOCHS, test_lls, label='Test')

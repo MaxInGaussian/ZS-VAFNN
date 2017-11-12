@@ -21,7 +21,7 @@ import numpy as np
 import zhusuan as zs
 import tensorflow as tf
 import tensorflow.contrib.layers as layers
-
+tf.set_random_seed(314159)
 
 def get_w_names(drop_rate, net_sizes):
     w_names = []
@@ -34,17 +34,17 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
         for i in range(len(net_sizes)-1):
             f = tf.layers.dense(f, net_sizes[i+1])
             if(i < len(net_sizes)-2):
-                omega_shape = [1, net_sizes[i+1], n_basis]
                 omega_mean = tf.get_variable('omega_mean'+str(i),
-                    shape=omega_shape, initializer=tf.constant_initializer(0.))
+                    shape=[1, 1, net_sizes[i+1], n_basis],
+                    initializer=tf.random_normal_initializer())
                 omega_logstd = tf.get_variable('omega_logstd'+str(i),
-                    shape=omega_shape, initializer=tf.constant_initializer(0.))
-                omega_i = tf.expand_dims(omega_mean, 0)+tf.random_normal(
-                    tf.concat([[n_samples], omega_shape], 0))*tf.expand_dims(
-                        tf.exp(omega_logstd), 0)
-                omega_i = tf.tile(omega_i, [1, tf.shape(X)[0], 1, 1])
-                f = tf.matmul(f, omega_i)/tf.sqrt(net_sizes[i+1]*1.)
-                f = tf.concat([tf.cos(f),tf.sin(f)], 3)
+                    shape=[1, 1, net_sizes[i+1], n_basis],
+                    initializer=tf.random_normal_initializer())
+                omega = omega_mean+tf.random_normal([
+                    n_samples, 1, net_sizes[i+1], n_basis])*tf.exp(omega_logstd)
+                omega = tf.tile(omega, [1, tf.shape(X)[0], 1, 1])
+                f = tf.matmul(f, omega)/tf.sqrt(net_sizes[i+1]*1.)
+                f = tf.concat([tf.cos(f), tf.sin(f)], 3)/tf.sqrt(n_basis*1.)
         f = tf.squeeze(f, [2])
         if(task == "regression"):
             y_logstd = tf.get_variable('y_logstd', shape=[],

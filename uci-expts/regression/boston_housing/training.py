@@ -68,7 +68,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA'
     ]
     
     dataset = load_data(5)
@@ -83,17 +83,20 @@ if __name__ == '__main__':
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.15,
-        'train_samples': 10,
+        'train_samples': 20,
         'test_samples': 100,
         'max_iters': 1000,
         'n_hiddens': [50, 25],
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 1500,
-        'early_stop': 10,
+        'early_stop': 5,
         'check_freq': 5,
     }
-     
+#{'MCSSA': [3.6496205, 2.7115333, 2.9343121, 2.2398276, 3.7138424]} {'MCSSA': [2.7766309, 2.6576052, 2.6555429, 2.4593017, 2.6670454]}
+#>>> MCSSA
+#>> RMSE = 3.0498 \pm 1.1034
+#>> NLPD = 2.6432 \pm 0.2009
     for argv in sys.argv:
         if('--' == argv[:2] and '=' in argv):
             eq_ind = argv.index('=')

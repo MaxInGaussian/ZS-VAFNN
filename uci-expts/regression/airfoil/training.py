@@ -68,7 +68,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
+        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA'
     ]
     
     dataset = load_data(5)
@@ -83,14 +83,14 @@ if __name__ == '__main__':
         'plot': True,
         'n_basis': 50,
         'drop_rate': 0.15,
-        'train_samples': 10,
+        'train_samples': 20,
         'test_samples': 100,
         'max_iters': 1000,
         'n_hiddens': [50, 25],
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 1500,
-        'early_stop': 10,
+        'early_stop': 5,
         'check_freq': 5,
     }
      
