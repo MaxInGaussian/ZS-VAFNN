@@ -68,7 +68,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA'
+        'MCSSA'
     ]
     
     dataset = load_data(5)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         'task': "regression",
         'save': False,
         'plot': True,
-        'n_basis': 100,
+        'n_basis': 50,
         'drop_rate': 0.15,
         'train_samples': 20,
         'test_samples': 100,

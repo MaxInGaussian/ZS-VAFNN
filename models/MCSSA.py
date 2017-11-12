@@ -49,13 +49,7 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
                 f = tf.concat([tf.cos(f), tf.sin(f)], 3)/tf.sqrt(n_basis*1.)
                 if(i == len(net_sizes)-3):
                     Phi = f
-                KL_w += tf.reduce_mean(
+                KL_w += tf.reduce_sum(
                     omega_std**2+omega_mean**2-2*omega_logstd-1)/2.
         f = tf.squeeze(f, [2])
-        if(task == "regression"):
-            y_logstd = tf.get_variable('y_logstd', shape=[],
-                                    initializer=tf.constant_initializer(0.))
-            y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
-        elif(task == "classification"):
-            y = zs.OnehotCategorical('y', f)
-    return model, f, [tf.exp(y_logstd), Phi, KL_w/(len(net_sizes)-2)]
+    return model, f, KL_w
