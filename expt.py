@@ -139,15 +139,15 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     g_mu, g_var = tf.nn.moments(f, axes=[2])
                     g_mu = tf.expand_dims(tf.reduce_mean(g_mu, 0), 1)
                     g_var = tf.expand_dims(tf.reduce_mean(g_var, 0), 1)
-                    p_pred = (y_pred-g_mu)/g_var**0.5
-                    p_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
+                    y_pred = (y_pred-g_mu)/g_var**0.5
+                    y_pred = tf.contrib.distributions.Normal(0., 1.).cdf(y_pred)
             if(model_name == "DNN"):
-                # if(task == "regression"):
-                cost = tf.losses.mean_squared_error(y_pred, y)
-                # if(task == "classification"):
-                #     cost = tf.reduce_mean(
-                #         tf.nn.softmax_cross_entropy_with_logits(
-                #             logits=y_pred, labels=y))
+                if(task == "regression"):
+                    cost = tf.losses.mean_squared_error(y_pred, y)
+                if(task == "classification"):
+                    cost = tf.reduce_mean(
+                        tf.nn.softmax_cross_entropy_with_logits(
+                            logits=y_pred, labels=y))
             elif('MC' in model_name):
                 cost = tf.losses.mean_squared_error(y_pred, y)
             else:
@@ -191,7 +191,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                 AUC = 0.
                 for p in range(P):
                     AUC += tf.metrics.auc(
-                        labels=y[:, p], predictions=p_pred[:, p])[1]
+                        labels=y[:, p], predictions=y_pred[:, p])[1]
                 LL = AUC/P
                 y_pred = tf.argmax(y_pred, 1)
                 sparse_y = tf.argmax(y, 1)
@@ -378,7 +378,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
             tm_std = np.std(eval_tms[model_name])
             ll_mu = np.mean(eval_lls[model_name])
             ll_std = np.std(eval_lls[model_name])
-            tm_name = 'RMSE' if task == "regression" else 'ERRT'
+            tm_name = 'RMSE' if task == "regression" else 'ACC'
             ll_name = 'NLPD' if task == "regression" else 'AUC'
             res_cols = [tm_name+' (mean)', tm_name+' (1.96*std)', tm_name,
                 ll_name+' (mean)', ll_name+' (1.96*std)', ll_name]

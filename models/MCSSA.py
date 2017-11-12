@@ -31,17 +31,24 @@ def get_w_names(drop_rate, net_sizes):
 def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
+        KL_w = 0
         for i in range(len(net_sizes)-1):
             f = tf.layers.dense(f, net_sizes[i+1])
-            if(i < len(net_sizes)-2):
+            if(i == len(net_sizes)-3):
                 omega_mean = tf.get_variable('omega_mean'+str(i),
                     shape=[1, 1, net_sizes[i+1], n_basis],
                     initializer=tf.random_normal_initializer())
+                omega_logstd = tf.get_variable('omega_logstd'+str(i),
+                    shape=[1, 1, net_sizes[i+1], n_basis],
+                    initializer=tf.constant_initializer(0.))
+                omega_std = tf.exp(omega_logstd)
                 omega = omega_mean+tf.random_normal([
-                    n_samples, 1, net_sizes[i+1], n_basis])
+                    n_samples, 1, net_sizes[i+1], n_basis])*omega_std
                 omega = tf.tile(omega, [1, tf.shape(X)[0], 1, 1])
                 f = tf.matmul(f, omega)/tf.sqrt(net_sizes[i+1]*1.)
                 f = tf.concat([tf.cos(f), tf.sin(f)], 3)/tf.sqrt(n_basis*1.)
+                KL_w += tf.reduce_mean(
+                    omega_std**2+omega_mean**2-2*omega_logstd-1)/2.
         f = tf.squeeze(f, [2])
         if(task == "regression"):
             y_logstd = tf.get_variable('y_logstd', shape=[],
@@ -49,4 +56,4 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
         elif(task == "classification"):
             y = zs.OnehotCategorical('y', f)
-    return model, f, None
+    return model, f, KL_w
