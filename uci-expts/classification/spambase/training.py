@@ -61,6 +61,7 @@ def load_data(n_folds):
         X_valid, y_valid = folds[valid_fold]
         X_test, y_test = folds[test_fold]
         dataset.append([X_train, y_train, X_valid, y_valid, X_test, y_test])
+        print(X_valid.shape, y_valid.shape, X_test.shape, y_test.shape)
     return dataset
 
 
@@ -73,7 +74,7 @@ if __name__ == '__main__':
         'MCSSA'
     ]
     
-    dataset = load_data(5)
+    dataset = list(reversed(load_data(5)))
     N, D = dataset[0][0].shape
     T, P = dataset[0][-1].shape
     print("N = %d, D = %d, T = %d, P = %d"%(N, D, T, P))
@@ -83,7 +84,7 @@ if __name__ == '__main__':
         'task': "classification",
         'save': False,
         'plot': True,
-        'n_basis': 100,
+        'n_basis': 50,
         'drop_rate': 0.15,
         'train_samples': 10,
         'test_samples': 100,

@@ -148,12 +148,13 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     cost = tf.reduce_mean(
                         tf.nn.softmax_cross_entropy_with_logits(
                             logits=y_pred, labels=y))
+            elif('SSA' in model_name):
+                sig2, Phi, KL = side_prod
+                cost = 1./(2*sig2)*tf.reduce_sum((y-y_pred)*y)+KL
             elif('MC' in model_name):
                 cost = tf.losses.mean_squared_error(y_pred, y)
             else:
                 log_py_xw = model.local_log_prob('y')
-            if(side_prod is not None):
-                cost += side_prod
             
             learn_rate_ph = tf.placeholder(tf.float32, shape=[])
             global_step = tf.Variable(0, trainable=False)
@@ -202,12 +203,8 @@ def run_experiment(model_names, dataset_name, dataset, **args):
             # Run the inference
             def get_batch(X_data, y_data, t, iters):
                 if(iters <= MAX_ITERS):
-                    if(t == iters-1):                        
-                        X_batch = X_data[t*BATCH_SIZE:]
-                        y_batch = y_data[t*BATCH_SIZE:]
-                    else:
-                        X_batch = X_data[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
-                        y_batch = y_data[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                    X_batch = X_data[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
+                    y_batch = y_data[t*BATCH_SIZE:(t+1)*BATCH_SIZE]
                 else:
                     inds = np.random.choice(range(N), BATCH_SIZE, replace=False)
                     X_batch, y_batch = X_data[inds], y_data[inds]
@@ -226,13 +223,13 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                     time_epoch = -time.time()
                     costs = []
                     for iter in range(min(MAX_ITERS, train_iters)):
-                        Xt_batch, yt_batch = get_batch(
+                        X_batch, y_batch = get_batch(
                             X_train, y_train, iter, train_iters)
                         _, c = sess.run(
                             [infer_op, cost],
                             feed_dict={n_samples: TRAIN_SAMPLES,
                                 learn_rate_ph: LEARN_RATE,
-                                X: Xt_batch, y: yt_batch})
+                                X: X_batch, y: y_batch})
                         costs.append(c)
                     time_epoch += time.time()
                     train_cost =  np.mean(costs)
@@ -242,11 +239,11 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                         costs, tms, lls = [], [], []
                         time_valid = -time.time()
                         for iter in range(valid_iters):
-                            Xv_batch, yv_batch = get_batch(
+                            X_batch, y_batch = get_batch(
                                 X_valid, y_valid, iter, valid_iters)
                             c, tm, ll = sess.run([cost, task_measure, LL],
                                 feed_dict={n_samples: TEST_SAMPLES,
-                                    X: Xv_batch, y: yv_batch})
+                                    X: X_batch, y: y_batch})
                             costs.append(c);tms.append(tm);lls.append(ll)
                         time_valid += time.time()
                         valid_cost, valid_tm, valid_ll =\

@@ -47,6 +47,8 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
                 omega = tf.tile(omega, [1, tf.shape(X)[0], 1, 1])
                 f = tf.matmul(f, omega)/tf.sqrt(net_sizes[i+1]*1.)
                 f = tf.concat([tf.cos(f), tf.sin(f)], 3)/tf.sqrt(n_basis*1.)
+                if(i == len(net_sizes)-3):
+                    Phi = f
                 KL_w += tf.reduce_mean(
                     omega_std**2+omega_mean**2-2*omega_logstd-1)/2.
         f = tf.squeeze(f, [2])
@@ -56,4 +58,4 @@ def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
             y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
         elif(task == "classification"):
             y = zs.OnehotCategorical('y', f)
-    return model, f, KL_w/(len(net_sizes)-2)
+    return model, f, [tf.exp(y_logstd), Phi, KL_w/(len(net_sizes)-2)]
