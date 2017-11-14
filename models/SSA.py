@@ -31,29 +31,27 @@ def get_w_names(drop_rate, net_sizes):
 def p_Y_Xw(observed, X, drop_rate, n_basis, net_sizes, n_samples, task):
     with zs.BayesianNet(observed=observed) as model:
         f = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
+        KL_w = 0
         for i in range(len(net_sizes)-1):
-            f = tf.layers.dense(f, net_sizes[i+1])
-            w_shape = [1, 1, net_sizes[i+1]]
-            w_p = tf.ones([1, 1, net_sizes[i+1]])*drop_rate
-            w_u = tf.random_uniform(tf.concat([[n_samples], w_shape], 0), 0, 1)
-            f = f*tf.cast(tf.less(w_u, 1-drop_rate), tf.float32)
             if(i < len(net_sizes)-2):
-                omega_mean = tf.get_variable('omega_mean'+str(i),
-                    shape=[1, 1, net_sizes[i+1], n_basis],
+                f = tf.layers.dense(f, n_basis)
+                alpha_mean = tf.get_variable('alpha_mean'+str(i),
+                    shape=[1, 1, n_basis*2, net_sizes[i+1]],
                     initializer=tf.random_normal_initializer())
-                omega_logstd = tf.get_variable('omega_logstd'+str(i),
-                    shape=[1, 1, net_sizes[i+1], n_basis],
+                alpha_logstd = tf.get_variable('alpha_logstd'+str(i),
+                    shape=[1, 1, n_basis*2, net_sizes[i+1]],
                     initializer=tf.random_normal_initializer())
-                omega = omega_mean+tf.random_normal([
-                    n_samples, 1, net_sizes[i+1], n_basis])*tf.exp(omega_logstd)
-                omega = tf.tile(omega, [1, tf.shape(X)[0], 1, 1])
-                f = tf.matmul(f, omega)/tf.sqrt(net_sizes[i+1]*1.)
-                f = tf.concat([tf.cos(f), tf.sin(f)], 3)/tf.sqrt(n_basis*1.)
+                alpha_std = tf.exp(alpha_logstd)
+                alpha = alpha_mean+tf.random_normal([
+                    n_samples, 1, n_basis*2, net_sizes[i+1]])*alpha_std
+                alpha = tf.tile(alpha, [1, tf.shape(X)[0], 1, 1])
+                f1 = tf.matmul(f, alpha[:,:,:n_basis,:])/tf.sqrt(n_basis*.5)
+                f2 = tf.matmul(f, alpha[:,:,n_basis:,:])/tf.sqrt(n_basis*.5)
+                f = tf.concat([tf.cos(f1)+tf.cos(f2),
+                    tf.sin(f1)+tf.sin(f2)], 3)/tf.sqrt(net_sizes[i+1]*1.)
+                KL_w += tf.reduce_mean(
+                    alpha_std**2+alpha_mean**2-2*alpha_logstd-1)/2.
+            else:
+                f = tf.layers.dense(f, net_sizes[i+1])
         f = tf.squeeze(f, [2])
-        if(task == "regression"):
-            y_logstd = tf.get_variable('y_logstd', shape=[],
-                                    initializer=tf.constant_initializer(0.))
-            y = zs.Normal('y', f, logstd=y_logstd, group_ndims=1)
-        elif(task == "classification"):
-            y = zs.OnehotCategorical('y', f)
-    return model, f, None
+    return model, f, KL_w/(len(net_sizes)-2)

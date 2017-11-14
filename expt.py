@@ -149,8 +149,7 @@ def run_experiment(model_names, dataset_name, dataset, **args):
                         tf.nn.softmax_cross_entropy_with_logits(
                             logits=y_pred, labels=y))
             elif('SSA' in model_name):
-                KL = side_prod
-                cost = tf.reduce_logsumexp(.5*(y_pred-y)**2.)
+                cost = tf.losses.mean_squared_error(y_pred, y)+side_prod/P/N
             elif('MC' in model_name):
                 cost = tf.losses.mean_squared_error(y_pred, y)
             else:
