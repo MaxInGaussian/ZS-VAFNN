@@ -71,7 +71,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'MCSSA'
+        'DNN', 'VIBayesNN', 'MCDropout', 'SSA'
     ]
     
     dataset = list(reversed(load_data(5)))
@@ -117,5 +117,5 @@ if __name__ == '__main__':
         ll_mu = np.mean(eval_lls[model_name])
         ll_std = np.std(eval_lls[model_name])
         print('>>> '+model_name)
-        print('>> ERRT = {:.4f} \pm {:.4f}'.format(errt_mu, 1.96*errt_std))
+        print('>> ACC = {:.4f} \pm {:.4f}'.format(errt_mu, 1.96*errt_std))
         print('>> AUC = {:.4f} \pm {:.4f}'.format(ll_mu, 1.96*ll_std))

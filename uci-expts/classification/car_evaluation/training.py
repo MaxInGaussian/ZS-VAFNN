@@ -69,7 +69,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'VIBayesNN', 'VIFourAct', 'MCDropout', 'MCSSA'
+        'DNN', 'VIBayesNN', 'MCDropout', 'SSA'
     ]
     
     dataset = load_data(5)
@@ -88,9 +88,9 @@ if __name__ == '__main__':
         'n_hiddens': [50, 25],
         'batch_size': 10,
         'learn_rate': 1e-3,
-        'max_epochs': 1000,
+        'max_epochs': 1500,
         'early_stop': 5,
-        'check_freq': 10,
+        'check_freq': 5,
     }
      
     for argv in sys.argv:

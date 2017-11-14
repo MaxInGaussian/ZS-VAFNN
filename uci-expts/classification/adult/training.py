@@ -69,7 +69,7 @@ if __name__ == '__main__':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     
     model_names = [
-        'DNN', 'VIBayesNN', 'MCDropout', 'MCSSA', 'MCSSADropout'
+        'DNN', 'VIBayesNN', 'MCDropout', 'SSA'
     ]
     
     dataset = load_data(5)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         'batch_size': 10,
         'learn_rate': 1e-3,
         'max_epochs': 1500,
-        'early_stop': 10,
+        'early_stop': 5,
         'check_freq': 5,
     }
      
