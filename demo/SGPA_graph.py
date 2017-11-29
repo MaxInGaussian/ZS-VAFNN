@@ -3,6 +3,7 @@ import tensorflow as tf
 
 ## Computation graph for SGPA
 def build_SGPA_graph(X, layers_width, n_samples):
+    KL = 0
     Z = tf.expand_dims(tf.tile(tf.expand_dims(X, 0), [n_samples, 1, 1]), 2)
     for h, n_out in enumerate(layers_width[1:]):
         # Hidden layer
@@ -33,7 +34,8 @@ def build_SGPA_graph(X, layers_width, n_samples):
             # Compute u_{h+1} and v_{h+1}
             U, V = tf.cos(Z1)+tf.cos(Z2), tf.sin(Z1)+tf.sin(Z2)
             Z = tf.concat([U, V], 3)/tf.sqrt(n_out*1.)
+            KL += tf.reduce_mean(alpha_std**2+alpha_mean**2-2*alpha_logstd-1)/2.
         # Output layer
         else:
             F = tf.squeeze(tf.layers.dense(Z, n_out), [2])
-    return F
+    return F, KL

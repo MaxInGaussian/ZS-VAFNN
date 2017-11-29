@@ -5,8 +5,8 @@ from training_graph import build_training_graph
 from load_data import load_data, scaler
 
 valid_freq, patience, epochs = 5, 10, 1000
-learn_rate, batch_size, hiddens_width = 1e-4, 20, [50, 25]
-train_samples, valid_samples, test_samples = 5, 20, 200
+learn_rate, batch_size, hiddens_width = 1., 20, [50, 25]
+train_samples, valid_samples, test_samples = 10, 30, 200
 
 performance_log, datasets = [], load_data(5)
 for X_train, Y_train, X_valid, Y_valid, X_test, Y_test in datasets:

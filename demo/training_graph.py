@@ -13,14 +13,14 @@ def build_training_graph(layers_width, learn_rate, Y_std):
     ## Computation graph for optimization
     noise = tf.get_variable('noise', shape=(),
         initializer=tf.constant_initializer(0.2))
-    F = build_SGPA_graph(X, layers_width, n_samples)
+    F, KL = build_SGPA_graph(X, layers_width, n_samples)
     F_mean, F_variance = tf.nn.moments(F, axes=[0])
     F_variance += noise
-    obj = tf.log(noise)+tf.reduce_mean((Y-F_mean)**2)/noise
+    obj = tf.log(noise)+tf.reduce_mean((Y-F_mean)**2)/noise+KL
     global_step = tf.Variable(0, trainable=False)
     learn_rate_ts = tf.train.exponential_decay(
         learn_rate, global_step, 10000, 0.96, staircase=True)
-    optimizer = tf.train.AdamOptimizer(learn_rate_ts)
+    optimizer = tf.train.AdadeltaOptimizer(learn_rate_ts)
     infer_op = optimizer.minimize(obj, global_step=global_step)
     
     ## Computation graph for saving the best set of parameters
