@@ -4,7 +4,7 @@ import tensorflow as tf
 from training_graph import build_training_graph
 from load_data import load_data, scaler
 
-n_basis, valid_freq, patience, epochs = 50, 5, 30, 1000
+n_basis, valid_freq, patience, tol, epochs = 50, 5, 20, 1e-3, 1000
 learn_rate, batch_size, hiddens_width = 1., 10, [50, 25]
 train_samples, valid_samples, test_samples = 10, 30, 200
 
@@ -39,7 +39,7 @@ for X_train, Y_train, X_valid, Y_valid, X_test, Y_test in datasets:
                             graph['n_samples']: valid_samples})
                     valid_batches.append([rmse, nlpd])
                 new_rmse, new_nlpd = np.mean(valid_batches, 0)
-                if(new_rmse < min_rmse and new_nlpd < min_nlpd):
+                if(new_rmse < min_rmse+tol and new_nlpd < min_nlpd+tol):
                     wait, min_rmse, min_nlpd = 0, new_rmse, new_nlpd
                     sess.run(graph['assign_to_save'])
                 else:
